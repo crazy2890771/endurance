@@ -307,6 +307,99 @@ export async function extractPdfLines(file: ArrayBuffer): Promise<string[]> {
   return lines;
 }
 
+// ---------------- AIMS roster JSON (from the "ตารางแลกไฟลต์" roster app) ----------------
+
+interface AimsSector {
+  flt?: string;
+  from?: string;
+  to?: string;
+  dep?: string | null;
+  arr?: string | null;
+}
+
+interface AimsDay {
+  date: string;
+  status: string;
+  code?: string;
+  signOn?: string | null;
+  signOff?: string | null;
+  offNextDay?: boolean;
+  sectors?: AimsSector[];
+}
+
+const AIMS_STATUS_TYPE: Record<string, string> = { OFF: 'dt-off', OFF_AFTER: 'dt-off', ROFF: 'dt-roff', REST: 'dt-rest', AL: 'dt-al' };
+
+/** Pick the duty type for one AIMS day: flights by sectors, ground duties by their code prefix. */
+function aimsDutyType(d: AimsDay, types: DutyType[]): string | undefined {
+  const has = (id: string) => types.some((t) => t.id === id);
+  const byStatus = AIMS_STATUS_TYPE[d.status];
+  if (byStatus) return has(byStatus) ? byStatus : undefined;
+  if (d.status !== 'DUTY') return undefined;
+  if (d.sectors?.length) return has('dt-flight') ? 'dt-flight' : undefined;
+  const code = (d.code ?? '').toUpperCase();
+  if (/^(DH|SBY|STBY|HSBY|ASBY|RSV|RES)/.test(code)) return has('dt-standby') ? 'dt-standby' : undefined;
+  if (/^(DM|SIM|TRG|GS|BS|CRM|SEP|LINE|CHK)/.test(code)) return has('dt-dm') ? 'dt-dm' : undefined;
+  return matchDutyType(code, types);
+}
+
+/** Human label for a flight day, e.g. "FD3402 DMK–URT–DMK". */
+function aimsRoute(sectors: AimsSector[]): string {
+  const stops: string[] = [];
+  for (const s of sectors) {
+    if (s.from && stops[stops.length - 1] !== s.from) stops.push(s.from);
+    if (s.to) stops.push(s.to);
+  }
+  const flts = sectors.map((s) => s.flt).filter(Boolean);
+  return [flts[0], stops.join('–')].filter(Boolean).join(' ');
+}
+
+/** Collect days from one month doc `{days}`, an array of them, or `{months: {key: {days}}}`. A month's own days win over spill-over days. */
+function aimsDays(data: unknown): AimsDay[] {
+  const docs: { key?: string; days: AimsDay[] }[] = [];
+  const push = (x: unknown, key?: string) => {
+    const doc = x as { days?: unknown; key?: string };
+    if (doc && Array.isArray(doc.days)) docs.push({ key: key ?? doc.key, days: doc.days as AimsDay[] });
+  };
+  if (Array.isArray(data)) data.forEach((x) => push(x));
+  else if (data && typeof data === 'object' && 'months' in data) {
+    for (const [k, v] of Object.entries((data as { months: Record<string, unknown> }).months ?? {})) push(v, k.replace(/^roster-/, ''));
+  } else push(data);
+  const byDate = new Map<string, AimsDay>();
+  for (const own of [false, true]) {
+    for (const doc of docs) {
+      for (const d of doc.days) {
+        if (!d || typeof d.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d.date)) continue;
+        const isOwn = !doc.key || d.date.startsWith(doc.key);
+        if (isOwn === own && (own || !byDate.has(d.date))) byDate.set(d.date, d);
+      }
+    }
+  }
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+export function parseAimsRosterJson(text: string, types: DutyType[]): ParsedDuty[] {
+  const days = aimsDays(JSON.parse(text));
+  return days.map((d) => {
+    const sectors = Array.isArray(d.sectors) ? d.sectors : [];
+    const startTime = parseTime(d.signOn ?? undefined);
+    const endTime = parseTime(d.signOff ?? undefined);
+    const next = new Date(+d.date.slice(0, 4), +d.date.slice(5, 7) - 1, +d.date.slice(8, 10) + 1);
+    const nextIso = `${next.getFullYear()}-${pad(next.getMonth() + 1)}-${pad(next.getDate())}`;
+    const label = sectors.length ? aimsRoute(sectors) : d.code || (d.status === 'OFF_AFTER' ? '>OFF' : '');
+    return {
+      date: d.date,
+      endDate: d.offNextDay && startTime && endTime && endTime > startTime ? nextIso : undefined,
+      startTime,
+      endTime,
+      raw: [d.status, d.code, label].filter(Boolean).join(' '),
+      title: label || undefined,
+      notes: sectors.length > 1 ? sectors.map((s) => [s.flt, s.from && s.to ? `${s.from}-${s.to}` : '', s.dep && s.arr ? `${s.dep}-${s.arr}` : ''].filter(Boolean).join(' ')).join('\n') : undefined,
+      dutyTypeId: aimsDutyType(d, types),
+      sourceKey: `aims:${d.date}`,
+    };
+  });
+}
+
 export const CSV_TEMPLATE = `date,duty,start,end,title,notes
 2026-10-20,DM,08:00,16:00,Ground school,
 2026-10-21,OFF,,,,

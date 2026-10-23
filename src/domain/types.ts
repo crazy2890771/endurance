@@ -78,7 +78,7 @@ export interface DutyType extends SyncFields {
   keywords?: string[];
 }
 
-export type DutySource = 'manual' | 'csv' | 'ics' | 'pdf';
+export type DutySource = 'manual' | 'csv' | 'ics' | 'pdf' | 'aims';
 
 export interface Duty extends SyncFields {
   date: ISODate;

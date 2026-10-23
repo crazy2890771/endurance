@@ -228,6 +228,13 @@ export const th: Record<TKey, string> = {
   'import.noneHint': 'ลองใช้ CSV หรือ ICS หรือเพิ่ม Duty เอง',
   'import.parsing': 'กำลังอ่านไฟล์…',
   'import.failed': 'อ่านไฟล์ไม่ได้: {msg}',
+  'import.aims': 'ตารางแลกไฟลต์ / AIMS (JSON)',
+  'import.aimsHint': 'ไฟล์ JSON ตารางจากแอปตารางแลกไฟลต์',
+  'import.fromSwap': 'นำเข้าจากแอปตารางแลกไฟลต์',
+  'import.fromSwapHint': 'ตาราง AIMS ของคุณ: {months} · คัดลอกเมื่อ {date}',
+  'import.replace': 'แทนที่ Duty เดิมในวันที่นำเข้า',
+  'import.replaceHint': 'ใช้เมื่อตารางบินเปลี่ยน การฝึกจะไม่ถูกแก้ไข',
+  'import.doneReplaced': 'นำเข้า {added} รายการ แทนที่ Duty เดิม {replaced} รายการ',
   'import.template': 'ดาวน์โหลดแม่แบบ CSV',
   'import.pdfNote': 'รูปแบบ PDF แตกต่างกันในแต่ละสายการบิน ระบบเดาแถวจากบรรทัดที่มีวันที่ — โปรดตรวจทุกแถว',
 

@@ -226,6 +226,13 @@ export const en = {
   'import.noneHint': 'Try CSV or ICS, or add duties manually.',
   'import.parsing': 'Reading file…',
   'import.failed': 'Could not read file: {msg}',
+  'import.aims': 'ตารางแลกไฟลต์ / AIMS (JSON)',
+  'import.aimsHint': 'Roster JSON from the ตารางแลกไฟลต์ app',
+  'import.fromSwap': 'Import from ตารางแลกไฟลต์',
+  'import.fromSwapHint': 'Your AIMS roster: {months} · copied {date}',
+  'import.replace': 'Replace existing duties on these dates',
+  'import.replaceHint': 'Use this when your roster changed. Workouts are never touched.',
+  'import.doneReplaced': '{added} imported, {replaced} old duties replaced',
   'import.template': 'Download CSV template',
   'import.pdfNote': 'PDF rosters vary between airlines. Rows are guessed from text lines containing a date — verify each one.',
 

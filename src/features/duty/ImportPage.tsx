@@ -1,14 +1,15 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, CalendarDays, FileSpreadsheet, FileText, Download } from 'lucide-react';
+import { AlertTriangle, CalendarDays, FileSpreadsheet, FileText, Download, FileJson, Plane } from 'lucide-react';
 import { useUI } from '@/app/ui';
 import { EmptyState, PageHeader, Spinner } from '@/components/ui';
 import { useDutyTypes } from '@/db/hooks';
 import { findDuplicateDuties, importDuties, type DutyDraft } from '@/db/repo';
-import { CSV_TEMPLATE, extractPdfLines, parseDutyCsv, parseDutyIcs, parseRosterText, type ParsedDuty } from '@/domain/importers';
+import { CSV_TEMPLATE, extractPdfLines, parseAimsRosterJson, parseDutyCsv, parseDutyIcs, parseRosterText, type ParsedDuty } from '@/domain/importers';
 import type { DutySource } from '@/domain/types';
 import { isValidHHmm, isValidISODate } from '@/lib/dates';
 import { downloadFile } from '@/lib/format';
+import { fromISODate } from '@/lib/dates';
 import { useI18n } from '@/i18n';
 
 interface Row extends ParsedDuty {
@@ -16,8 +17,34 @@ interface Row extends ParsedDuty {
   duplicate: boolean;
 }
 
+/** Roster snapshot copied from the "ตารางแลกไฟลต์" app, published next to the preview build only. */
+interface SwapSnapshot {
+  exportedAt: string;
+  months: string[];
+  text: string;
+}
+
+function useSwapSnapshot() {
+  const [snap, setSnap] = useState<SwapSnapshot | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch(`${import.meta.env.BASE_URL}swap-roster.json`, { cache: 'no-store' })
+      .then((r) => (r.ok ? r.text() : Promise.reject()))
+      .then((text) => {
+        const data = JSON.parse(text) as { exportedAt?: string; months?: Record<string, unknown> };
+        if (!alive || !data.months) return;
+        setSnap({ exportedAt: data.exportedAt ?? '', months: Object.keys(data.months).sort(), text });
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return snap;
+}
+
 export function ImportPage() {
-  const { t } = useI18n();
+  const { t, fmt } = useI18n();
   const { toast } = useUI();
   const nav = useNavigate();
   const types = useDutyTypes();
@@ -26,29 +53,30 @@ export function ImportPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [replace, setReplace] = useState(false);
+  const snapshot = useSwapSnapshot();
 
   const pick = (k: DutySource) => {
     setKind(k);
     if (input.current) {
-      input.current.accept = k === 'csv' ? '.csv,text/csv,text/plain' : k === 'ics' ? '.ics,text/calendar' : '.pdf,application/pdf';
+      input.current.accept = k === 'csv' ? '.csv,text/csv,text/plain' : k === 'ics' ? '.ics,text/calendar' : k === 'aims' ? '.json,application/json' : '.pdf,application/pdf';
       input.current.value = '';
       input.current.click();
     }
   };
 
-  const onFile = async (file: File | undefined) => {
-    if (!file || !types) return;
+  const load = async (src: DutySource, read: () => Promise<ParsedDuty[]>) => {
+    if (!types) return;
+    setKind(src);
+    setReplace(src === 'aims');
     setBusy(true);
     setError(undefined);
     setRows(null);
     try {
-      let parsed: ParsedDuty[];
-      if (kind === 'pdf') parsed = parseRosterText(await extractPdfLines(await file.arrayBuffer()), types);
-      else if (kind === 'ics') parsed = parseDutyIcs(await file.text(), types);
-      else parsed = parseDutyCsv(await file.text(), types);
-      const drafts = parsed.map((p) => toDraft(p, p.dutyTypeId ?? ''));
+      const parsed = await read();
+      const drafts = parsed.map((p) => toDraft(p, p.dutyTypeId ?? '', src));
       const dups = await findDuplicateDuties(drafts);
-      setRows(parsed.map((p, i) => ({ ...p, duplicate: dups[i], include: !dups[i] && !!p.dutyTypeId })));
+      setRows(parsed.map((p, i) => ({ ...p, duplicate: dups[i], include: (!dups[i] || src === 'aims') && !!p.dutyTypeId })));
     } catch (e) {
       setError(t('import.failed', { msg: (e as Error).message }));
     } finally {
@@ -56,7 +84,17 @@ export function ImportPage() {
     }
   };
 
-  const toDraft = (r: ParsedDuty, dutyTypeId: string): DutyDraft => ({
+  const onFile = (file: File | undefined) => {
+    if (!file || !types) return;
+    void load(kind, async () => {
+      if (kind === 'pdf') return parseRosterText(await extractPdfLines(await file.arrayBuffer()), types);
+      if (kind === 'ics') return parseDutyIcs(await file.text(), types);
+      if (kind === 'aims') return parseAimsRosterJson(await file.text(), types);
+      return parseDutyCsv(await file.text(), types);
+    });
+  };
+
+  const toDraft = (r: ParsedDuty, dutyTypeId: string, source: DutySource = kind): DutyDraft => ({
     date: r.date,
     endDate: r.endDate,
     startTime: r.startTime,
@@ -64,17 +102,21 @@ export function ImportPage() {
     dutyTypeId,
     title: r.title && r.title !== types?.find((x) => x.id === dutyTypeId)?.code ? r.title : undefined,
     notes: r.notes,
-    source: kind,
+    source,
     sourceKey: r.sourceKey,
   });
 
   const upd = (i: number, patch: Partial<Row>) => setRows((rs) => rs!.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const valid = (r: Row) => isValidISODate(r.date) && !!r.dutyTypeId && (!r.startTime || isValidHHmm(r.startTime)) && (!r.endTime || isValidHHmm(r.endTime));
   const selected = rows?.filter((r) => r.include && valid(r)) ?? [];
+  // Ticking “replace” re-includes rows that were only unticked as duplicates.
+  useEffect(() => {
+    if (replace) setRows((rs) => rs?.map((r) => (r.duplicate && r.dutyTypeId ? { ...r, include: true } : r)) ?? rs);
+  }, [replace]);
 
   const save = async () => {
-    const res = await importDuties(selected.map((r) => toDraft(r, r.dutyTypeId!)));
-    toast(t('import.done', res));
+    const res = await importDuties(selected.map((r) => toDraft(r, r.dutyTypeId!)), { replace });
+    toast(res.replaced ? t('import.doneReplaced', res) : t('import.done', res));
     nav('/settings/duties');
   };
 
@@ -83,10 +125,30 @@ export function ImportPage() {
       <PageHeader title={t('import.title')} back />
       <input ref={input} type="file" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} aria-hidden="true" tabIndex={-1} />
       <div className="px-4">
+        {snapshot && (
+          <button
+            className="card w-full mb-3 px-4 py-3 flex items-center gap-3 text-left border-sky/50 bg-sky/5 active:scale-[.99] transition"
+            onClick={() => load('aims', async () => parseAimsRosterJson(snapshot.text, types ?? []))}
+          >
+            <span className="w-11 h-11 rounded-xl bg-sky/15 text-sky flex items-center justify-center shrink-0">
+              <Plane size={22} />
+            </span>
+            <span className="min-w-0">
+              <span className="block font-semibold">{t('import.fromSwap')}</span>
+              <span className="block text-xs text-muted">
+                {t('import.fromSwapHint', {
+                  months: snapshot.months.map((m) => fmt(fromISODate(`${m}-01`), 'MMM yy')).join(', '),
+                  date: snapshot.exportedAt ? fmt(new Date(snapshot.exportedAt), 'd MMM HH:mm') : '—',
+                })}
+              </span>
+            </span>
+          </button>
+        )}
         <div className="flex flex-col gap-2">
           <Choice icon={<FileSpreadsheet size={22} className="text-mint" />} title={t('import.csv')} sub={t('import.csvHint')} onClick={() => pick('csv')} />
           <Choice icon={<CalendarDays size={22} className="text-sky" />} title={t('import.ics')} sub={t('import.icsHint')} onClick={() => pick('ics')} />
           <Choice icon={<FileText size={22} className="text-warn" />} title={t('import.pdf')} sub={t('import.pdfHint')} onClick={() => pick('pdf')} />
+          <Choice icon={<FileJson size={22} className="text-violet" />} title={t('import.aims')} sub={t('import.aimsHint')} onClick={() => pick('aims')} />
         </div>
         <button className="mt-3 text-sm text-sky font-semibold inline-flex items-center gap-1 min-h-[44px]" onClick={() => downloadFile('kim-roster-template.csv', CSV_TEMPLATE, 'text/csv')}>
           <Download size={16} /> {t('import.template')}
@@ -111,6 +173,13 @@ export function ImportPage() {
             <p className="text-sm text-muted mb-1">{t('import.reviewHint')}</p>
             {kind === 'pdf' && <p className="text-sm text-warn mb-2">{t('import.pdfNote')}</p>}
             <p className="text-xs text-muted mb-3">{t('import.rows', { n: rows.length })}</p>
+            <label className="card px-3 py-3 mb-3 flex items-start gap-3 cursor-pointer">
+              <input type="checkbox" className="w-6 h-6 mt-0.5 accent-[rgb(var(--mint))]" checked={replace} onChange={(e) => setReplace(e.target.checked)} />
+              <span>
+                <span className="block text-sm font-semibold">{t('import.replace')}</span>
+                <span className="block text-xs text-muted">{t('import.replaceHint')}</span>
+              </span>
+            </label>
             <div className="flex flex-col gap-2">
               {rows.map((r, i) => (
                 <div key={i} className={`card p-3 ${r.include ? '' : 'opacity-60'}`}>
@@ -138,7 +207,7 @@ export function ImportPage() {
                   </div>
                   <p className="text-xs text-muted mt-2 truncate">
                     {r.raw && <span className="font-mono">“{r.raw.slice(0, 80)}”</span>}
-                    {r.duplicate && <span className="ml-2 text-warn font-semibold">{t('import.duplicate')}</span>}
+                    {r.duplicate && !replace && <span className="ml-2 text-warn font-semibold">{t('import.duplicate')}</span>}
                     {!r.dutyTypeId && <span className="ml-2 text-warn font-semibold">{t('import.unknownType')}</span>}
                   </p>
                 </div>

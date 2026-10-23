@@ -76,7 +76,7 @@ describe('duties', () => {
       { date: '2026-10-22', dutyTypeId: 'dt-flight', startTime: '05:30', endTime: '14:45', source: 'csv' },
       { date: '2026-10-22', dutyTypeId: 'dt-flight', startTime: '05:30', endTime: '14:45', source: 'csv' },
     ]);
-    expect(res).toEqual({ added: 1, skipped: 2 });
+    expect(res).toMatchObject({ added: 1, skipped: 2 });
     const again = await importDuties([{ date: '2026-10-22', dutyTypeId: 'dt-flight', startTime: '05:30', endTime: '14:45', source: 'ics' }]);
     expect(again.added).toBe(0);
   });
@@ -85,6 +85,15 @@ describe('duties', () => {
     await importDuties([{ date: '2026-10-22', dutyTypeId: 'dt-flight', startTime: '05:30', endTime: '14:45', source: 'ics', sourceKey: 'ics:1' }]);
     const r = await importDuties([{ date: '2026-10-22', dutyTypeId: 'dt-flight', startTime: '06:00', endTime: '15:00', source: 'ics', sourceKey: 'ics:1' }]);
     expect(r.added).toBe(0);
+  });
+
+  it('replaces duties on imported dates when asked, keeping other days', async () => {
+    await saveDuty({ date: '2026-10-21', dutyTypeId: 'dt-flight', startTime: '05:30', endTime: '14:45', source: 'aims', sourceKey: 'aims:2026-10-21' });
+    await saveDuty({ date: '2026-10-22', dutyTypeId: 'dt-off', source: 'manual' });
+    const r = await importDuties([{ date: '2026-10-21', dutyTypeId: 'dt-flight', startTime: '06:10', endTime: '15:00', source: 'aims', sourceKey: 'aims:2026-10-21' }], { replace: true });
+    expect(r).toEqual({ added: 1, skipped: 0, replaced: 1 });
+    const live = (await db.duties.toArray()).filter((d) => !d.deleted);
+    expect(live.map((d) => `${d.date} ${d.startTime ?? ''}`).sort()).toEqual(['2026-10-21 06:10', '2026-10-22 ']);
   });
 
   it('does not delete built-in or in-use duty types', async () => {

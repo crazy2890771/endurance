@@ -161,8 +161,19 @@ export async function findDuplicateDuties(drafts: DutyDraft[]): Promise<boolean[
   return drafts.map((d) => keys.has(dutyFingerprint(d)) || (!!d.sourceKey && keys.has(d.sourceKey)));
 }
 
-/** Import reviewed duties. Duplicates (same date/type/times or same source key) are skipped. */
-export async function importDuties(drafts: DutyDraft[]): Promise<{ added: number; skipped: number }> {
+/**
+ * Import reviewed duties. Duplicates (same date/type/times or same source key) are skipped.
+ * With `replace`, existing duties starting on the imported dates are removed first, so an
+ * updated roster replaces the old entries instead of stacking on top of them.
+ */
+export async function importDuties(drafts: DutyDraft[], opts: { replace?: boolean } = {}): Promise<{ added: number; skipped: number; replaced: number }> {
+  let replaced = 0;
+  if (opts.replace && drafts.length) {
+    const dates = [...new Set(drafts.map((d) => d.date))];
+    const old = (await db.duties.where('date').anyOf(dates).toArray()).filter((d) => !d.deleted);
+    await db.duties.bulkPut(old.map((d) => stamp({ ...d, deleted: true })));
+    replaced = old.length;
+  }
   const dup = await findDuplicateDuties(drafts);
   const seen = new Set<string>();
   const toAdd: Duty[] = [];
@@ -174,7 +185,7 @@ export async function importDuties(drafts: DutyDraft[]): Promise<{ added: number
   });
   await db.duties.bulkPut(toAdd);
   emitChange();
-  return { added: toAdd.length, skipped: drafts.length - toAdd.length };
+  return { added: toAdd.length, skipped: drafts.length - toAdd.length, replaced };
 }
 
 export async function saveDutyType(t: Omit<DutyType, keyof SyncFields> & Partial<SyncFields>) {
