@@ -129,7 +129,7 @@ describe('PDF roster text heuristics', () => {
 });
 
 describe('AIMS roster JSON (ตารางแลกไฟลต์)', () => {
-  const month = (key: string, days: object[]) => ({ days, source: 'image', savedAt: 1 });
+  const month = (_key: string, days: object[]) => ({ days, source: 'image', savedAt: 1 });
   const oct = month('2026-10', [
     { date: '2026-10-01', status: 'DUTY', code: '', signOn: '08:50', signOff: '20:04', offNextDay: false, sectors: [{ flt: 'FD175', from: 'DMK', to: 'CNX', dep: '09:50', arr: '11:05' }, { flt: 'FD176', from: 'CNX', to: 'DMK', dep: '11:45', arr: '12:55' }] },
     { date: '2026-10-02', status: 'DUTY', code: 'DH3', signOn: '15:00', signOff: '23:00', sectors: [] },
