@@ -5,14 +5,21 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
 import pkg from './package.json' with { type: 'json' };
 
+// ARTIFACT=1 builds a self-contained preview (relative paths, no service worker, in-memory routing)
+// for hosts that cannot serve SPA routes or register a service worker.
+const artifact = process.env.ARTIFACT === '1';
+
 export default defineConfig({
-  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
+  base: artifact ? './' : '/',
+  build: { outDir: artifact ? 'dist-artifact' : 'dist' },
+  define: { __APP_VERSION__: JSON.stringify(pkg.version), __ARTIFACT__: JSON.stringify(artifact) },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   plugins: [
     react(),
     VitePWA({
+      disable: artifact,
       registerType: 'prompt',
       includeAssets: ['icons/favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {

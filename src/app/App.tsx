@@ -1,5 +1,5 @@
 import { Component, useEffect, useState, type ReactNode } from 'react';
-import { BrowserRouter, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, MemoryRouter, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CalendarDays, History, House, Settings, WifiOff } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useSettings } from '@/db/hooks';
@@ -24,6 +24,8 @@ import { WorkoutDetail } from '@/features/workout/WorkoutDetail';
 import { CompleteSheet } from '@/features/workout/CompleteSheet';
 import { DutyEditor } from '@/features/duty/DutyEditor';
 
+const Router = __ARTIFACT__ ? MemoryRouter : BrowserRouter;
+
 export function App() {
   const [ready, setReady] = useState(false);
   const [initError, setInitError] = useState<string>();
@@ -45,11 +47,11 @@ export function App() {
   return (
     <I18nProvider lang={settings.language}>
       <ErrorBoundary>
-        <BrowserRouter>
+        <Router>
           <UIProvider>
             {settings.onboarded ? <Shell /> : <WelcomePage />}
           </UIProvider>
-        </BrowserRouter>
+        </Router>
       </ErrorBoundary>
     </I18nProvider>
   );
@@ -164,6 +166,10 @@ function OfflineBanner() {
 }
 
 function UpdatePrompt() {
+  return __ARTIFACT__ ? null : <SwUpdatePrompt />;
+}
+
+function SwUpdatePrompt() {
   const { t } = useI18n();
   const {
     needRefresh: [needRefresh],
