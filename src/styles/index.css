@@ -1,0 +1,119 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root,
+.dark {
+  --bg: 9 13 16;
+  --card: 23 29 34;
+  --card2: 31 39 46;
+  --line: 44 54 62;
+  --ink: 236 242 246;
+  --muted: 140 155 166;
+  --mint: 85 229 163;
+  --sky: 82 191 255;
+  --warn: 255 159 67;
+  --danger: 255 99 112;
+  --violet: 167 139 250;
+  --run: 85 229 163;
+  --cycle: 255 181 71;
+  --swim: 82 191 255;
+  --strength: 167 139 250;
+  color-scheme: dark;
+}
+
+.light {
+  --bg: 242 245 247;
+  --card: 255 255 255;
+  --card2: 234 239 242;
+  --line: 215 223 229;
+  --ink: 14 22 28;
+  --muted: 95 110 122;
+  --mint: 22 170 106;
+  --sky: 20 140 210;
+  --warn: 224 120 20;
+  --danger: 214 52 70;
+  --violet: 124 92 220;
+  --run: 22 170 106;
+  --cycle: 214 132 10;
+  --swim: 20 140 210;
+  --strength: 124 92 220;
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-bg text-ink font-sans antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl bg-card border border-line/50;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-4 min-h-[48px] font-semibold transition active:scale-[.98] disabled:opacity-40 disabled:pointer-events-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky;
+  }
+  .btn-primary {
+    @apply btn bg-mint text-[#062015] shadow-[0_6px_24px_-8px_rgb(var(--mint)/.6)];
+  }
+  .btn-sky {
+    @apply btn bg-sky text-[#03111c];
+  }
+  .btn-ghost {
+    @apply btn bg-card2 text-ink;
+  }
+  .btn-danger {
+    @apply btn bg-danger/15 text-danger;
+  }
+  .chip {
+    @apply inline-flex items-center justify-center rounded-xl px-3 min-h-[44px] text-sm font-medium bg-card2 text-ink border border-transparent transition active:scale-[.97];
+  }
+  .chip-on {
+    @apply bg-mint text-[#062015] font-semibold;
+  }
+  .input {
+    @apply w-full rounded-xl bg-card2 border border-line/60 px-3 min-h-[48px] text-base text-ink placeholder:text-muted/70 outline-none focus:border-sky;
+  }
+  .label {
+    @apply block text-sm font-semibold text-ink mb-2;
+  }
+  .icon-btn {
+    @apply inline-flex items-center justify-center rounded-full w-11 h-11 text-ink hover:bg-card2 active:scale-95 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky;
+  }
+}
+
+/* Duty-type colours are user-chosen; darken them on light backgrounds so text stays readable. */
+.duty-ink {
+  color: var(--duty);
+}
+.light .duty-ink {
+  color: color-mix(in srgb, var(--duty) 60%, #000);
+}
+
+.pt-safe {
+  padding-top: max(env(safe-area-inset-top), 12px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
