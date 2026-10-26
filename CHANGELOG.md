@@ -2,6 +2,11 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.8.0 — 2026-10-26
+- **See free time at a glance.** The month calendar marks each rostered day: green = free all day (OFF, ROFF, Rest, AL, Standby), amber = free between duties, red = no free time. A legend sits under the calendar, and tapping a day lists its free windows.
+- The week view shows the free windows on duty days (e.g. "Free 05:00–14:20") instead of "No workout planned", and "Free all day" on off days.
+- Thai: workout names read naturally ("วิ่งเบา", "วิ่งอินเทอร์วัล") and durations are in Thai ("45 นาที", "1 ชม. 40 นาที").
+
 ## 1.7.0 — 2026-10-26
 - A duty that runs past midnight (e.g. report 15:20, debrief 01:12) belongs to its report day only. The next day is no longer shown as a flight day: it shows as **OFF** with "Train after …", and workouts are fine once the duty has ended plus **8 hours** of rest (09:12 in that example).
 - Planning inside that rest period raises a "Rest after FLT until …" warning; the editor shows the rest end and offers free windows from then. The rest length is adjustable under Training Rules → Duty conflicts.

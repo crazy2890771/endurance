@@ -176,6 +176,31 @@ export function freeWindows(blocks: DutyBlock[], minLen: number, from = 5 * 60, 
   return out.filter((w) => w.end - w.start >= minLen);
 }
 
+export type Availability = 'free' | 'partial' | 'busy' | 'unknown';
+
+/**
+ * How free a day is for training: `free` all day, `partial` with gaps between duty time
+ * (`windows`, or none known when a duty has no times), `busy` with no gap of `minLen`,
+ * `unknown` when there's no roster entry for the day.
+ */
+export function dayAvailability(
+  date: ISODate,
+  duties: Duty[],
+  dutyTypes: DutyType[],
+  rule: { bufferMin: number; overnightRestMin?: number },
+  minLen = 45,
+): { level: Availability; windows: { start: number; end: number }[] } {
+  const today = dutiesOnDate(duties, date);
+  if (!today.length) return { level: 'unknown', windows: [] };
+  const untimed = today.some((d) => (!d.startTime || !d.endTime) && dutyTypes.find((t) => t.id === d.dutyTypeId)?.allowsTraining === 'limited');
+  if (untimed) return { level: 'partial', windows: [] };
+  const blocks = dutyBlocksOn(date, duties, dutyTypes, rule.bufferMin, rule.overnightRestMin);
+  const windows = freeWindows(blocks, minLen);
+  const allDay = windows.length === 1 && windows[0].start === 5 * 60 && windows[0].end === 23 * 60;
+  if (!blocks.length || allDay) return { level: 'free', windows: [] };
+  return { level: windows.length ? 'partial' : 'busy', windows };
+}
+
 export function evaluatePlan(input: EvaluateInput): RuleWarning[] {
   const { from, to } = input;
   // Fill in rules added after the user's settings were saved.

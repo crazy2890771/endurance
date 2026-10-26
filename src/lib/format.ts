@@ -34,10 +34,17 @@ export function kmToInput(km: number, activity: Activity, units: Units): number 
   return round2(units === 'imperial' ? km / KM_PER_MI : km);
 }
 
-export function formatDuration(min: number): string {
-  if (!min) return '0 min';
-  const h = Math.floor(min / 60);
-  const m = Math.round(min % 60);
+let durationLang: 'en' | 'th' = 'en';
+/** Set by the i18n provider so durations read in the app's language. */
+export const setDurationLanguage = (lang: 'en' | 'th') => (durationLang = lang);
+
+export function formatDuration(min: number, lang = durationLang): string {
+  const h = Math.floor((min || 0) / 60);
+  const m = Math.round((min || 0) % 60);
+  if (lang === 'th') {
+    if (h === 0) return `${m} นาที`;
+    return m ? `${h} ชม. ${m} นาที` : `${h} ชม.`;
+  }
   if (h === 0) return `${m} min`;
   return m ? `${h}h ${m}m` : `${h}h`;
 }

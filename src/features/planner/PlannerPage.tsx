@@ -1,13 +1,13 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, Moon, Plane, Plus, X } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, Clock, Moon, Plane, Plus, X } from 'lucide-react';
 import { useUI } from '@/app/ui';
 import { Segmented } from '@/components/ui';
 import { DutyBadge, WorkoutCard } from '@/components/cards';
 import { ACTIVITY_BAR } from '@/components/icons';
 import { useDuties, useDutyTypes, useSettingsOrDefault, useWorkouts } from '@/db/hooks';
 import { moveWorkout } from '@/db/repo';
-import { dutiesShownOn, dutyEndDate, effectiveDistanceKm, restAfterOvernight } from '@/domain/rules';
+import { dayAvailability, dutiesShownOn, dutyEndDate, effectiveDistanceKm, restAfterOvernight, type Availability } from '@/domain/rules';
 import type { Duty, DutyType, ISODate, Workout } from '@/domain/types';
 import { addDaysISO, formatMin, fromISODate, isValidISODate, monthBounds, monthGrid, todayISO, weekDays } from '@/lib/dates';
 import { formatDuration, formatKm } from '@/lib/format';
@@ -15,6 +15,11 @@ import { useI18n } from '@/i18n';
 import { usePlanWarnings } from '@/features/plancheck/usePlanWarnings';
 
 type View = 'week' | 'month';
+type DayFree = ReturnType<typeof dayAvailability>;
+
+/** Free-time colours: green free all day, amber free between duties, red no gap. */
+const AVAIL_BAR: Record<Availability, string> = { free: 'bg-mint', partial: 'bg-amber-400', busy: 'bg-danger', unknown: 'bg-transparent' };
+const AVAIL_LEGEND = ['free', 'partial', 'busy'] as const;
 
 /** Time label for a duty as seen on one calendar day (handles overnight / multi-day duties). */
 function dutyTimeLabel(d: Duty, date: ISODate) {
@@ -54,6 +59,7 @@ export function PlannerPage() {
     const r = restAfterOvernight(d, duties ?? [], dutyTypes ?? [], settings.rules.dutyOverlap.overnightRestMin);
     return r ? formatMin(r.until) : undefined;
   };
+  const freeOn = (d: ISODate) => dayAvailability(d, duties ?? [], dutyTypes ?? [], settings.rules.dutyOverlap);
   const warnedIds = useMemo(() => new Set((warnings?.active ?? []).filter((w) => w.severity === 'warning').flatMap((w) => w.workoutIds)), [warnings]);
 
   const go = (date: ISODate, v: View = view) => {
@@ -145,6 +151,7 @@ export function PlannerPage() {
                   workouts={byDate.get(d) ?? []}
                   duties={dutiesShownOn(duties ?? [], d)}
                   restUntil={restUntil(d)}
+                  free={freeOn(d)}
                   typeById={typeById}
                   warned={warnedIds}
                   moving={!!moving}
@@ -163,6 +170,7 @@ export function PlannerPage() {
             byDate={byDate}
             duties={duties ?? []}
             restUntil={restUntil}
+            freeOn={freeOn}
             typeById={typeById}
             warned={warnedIds}
             onPick={onDayTap}
@@ -221,6 +229,7 @@ function DayRow({
   workouts,
   duties,
   restUntil,
+  free,
   typeById,
   warned,
   moving,
@@ -231,6 +240,7 @@ function DayRow({
   workouts: Workout[];
   duties: Duty[];
   restUntil?: string;
+  free: DayFree;
   typeById: Map<string, DutyType>;
   warned: Set<string>;
   moving: boolean;
@@ -274,9 +284,22 @@ function DayRow({
           )}
         </div>
         {workouts.length === 0 ? (
-          <p className="text-sm text-muted flex items-center gap-2 py-1">
-            <Moon size={14} /> {duties.length ? t('planner.noWorkout') : t('planner.restDay')}
-          </p>
+          free.level === 'partial' || free.level === 'busy' ? (
+            <p className={`text-sm flex items-center gap-2 py-1 ${free.level === 'busy' ? 'text-danger' : 'text-amber-400'}`}>
+              <Clock size={14} className="shrink-0" />
+              <span className="tabular-nums">
+                {free.windows.length
+                  ? t('planner.freeWindows', { windows: free.windows.map((w) => `${formatMin(w.start)}–${formatMin(w.end)}`).join(' · ') })
+                  : free.level === 'busy'
+                    ? t('planner.noFreeTime')
+                    : t('planner.freeUnknown')}
+              </span>
+            </p>
+          ) : (
+            <p className="text-sm text-muted flex items-center gap-2 py-1">
+              <Moon size={14} /> {free.level === 'free' ? t('planner.freeAllDay') : duties.length ? t('planner.noWorkout') : t('planner.restDay')}
+            </p>
+          )
         ) : (
           workouts.map((w) => (
             <WorkoutCard key={w.id} w={w} units={settings.units} compact warning={warned.has(w.id)} onClick={moving ? undefined : () => open({ kind: 'workoutDetail', id: w.id })} />
@@ -319,6 +342,7 @@ function MonthView({
   byDate,
   duties,
   restUntil,
+  freeOn,
   typeById,
   warned,
   onPick,
@@ -330,6 +354,7 @@ function MonthView({
   byDate: Map<ISODate, Workout[]>;
   duties: Duty[];
   restUntil: (d: ISODate) => string | undefined;
+  freeOn: (d: ISODate) => DayFree;
   typeById: Map<string, DutyType>;
   warned: Set<string>;
   onPick: (d: ISODate) => void;
@@ -349,6 +374,7 @@ function MonthView({
         {days.map((d) => {
           const ws = byDate.get(d) ?? [];
           const ds = dutiesShownOn(duties, d);
+          const free = freeOn(d).level;
           const inMonth = d.startsWith(month);
           const isToday = d === today;
           return (
@@ -359,6 +385,7 @@ function MonthView({
               aria-pressed={d === sel}
               className={`aspect-[4/5] sm:aspect-auto sm:h-24 rounded-xl p-1 flex flex-col items-center gap-0.5 border transition ${d === sel ? 'border-sky bg-card2' : 'border-transparent bg-card'} ${inMonth ? '' : 'opacity-40'}`}
             >
+              <span className={`w-5 h-1 rounded-full ${AVAIL_BAR[free]}`} aria-hidden="true" />
               <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full ${isToday ? 'bg-sky text-[#03111c]' : ''}`}>{fmt(fromISODate(d), 'd')}</span>
               {ds[0] && <DutyBadge duty={ds[0]} type={typeById.get(ds[0].dutyTypeId)} size="sm" />}
               <span className="flex flex-wrap justify-center gap-0.5 mt-auto mb-0.5">
@@ -370,12 +397,19 @@ function MonthView({
           );
         })}
       </div>
-      <DayDetail date={sel} workouts={byDate.get(sel) ?? []} duties={dutiesShownOn(duties, sel)} restUntil={restUntil(sel)} typeById={typeById} warned={warned} units={settings.units} t={t} />
+      <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-muted">
+        {AVAIL_LEGEND.map((a) => (
+          <span key={a} className="flex items-center gap-1.5">
+            <span className={`w-3 h-1.5 rounded-full ${AVAIL_BAR[a]}`} /> {t(`planner.avail.${a}`)}
+          </span>
+        ))}
+      </div>
+      <DayDetail date={sel} workouts={byDate.get(sel) ?? []} duties={dutiesShownOn(duties, sel)} restUntil={restUntil(sel)} free={freeOn(sel)} typeById={typeById} warned={warned} units={settings.units} t={t} />
     </>
   );
 }
 
-function DayDetail({ date, workouts, duties, restUntil, typeById, warned, units, t }: { date: ISODate; workouts: Workout[]; duties: Duty[]; restUntil?: string; typeById: Map<string, DutyType>; warned: Set<string>; units: 'metric' | 'imperial'; t: ReturnType<typeof useI18n>['t'] }) {
+function DayDetail({ date, workouts, duties, restUntil, free, typeById, warned, units, t }: { date: ISODate; workouts: Workout[]; duties: Duty[]; restUntil?: string; free: DayFree; typeById: Map<string, DutyType>; warned: Set<string>; units: 'metric' | 'imperial'; t: ReturnType<typeof useI18n>['t'] }) {
   const { fmt } = useI18n();
   const { open } = useUI();
   return (
@@ -402,6 +436,14 @@ function DayDetail({ date, workouts, duties, restUntil, typeById, warned, units,
           </button>
         ))}
         {restUntil && <p className="card px-3 py-2.5 text-sm text-sky">{t('planner.trainAfter', { time: restUntil })}</p>}
+        {free.level !== 'unknown' && (
+          <p className={`card px-3 py-2.5 text-sm tabular-nums flex items-center gap-2 ${free.level === 'free' ? 'text-mint' : free.level === 'busy' ? 'text-danger' : 'text-amber-400'}`}>
+            <Clock size={14} className="shrink-0" />
+            {free.windows.length
+              ? t('planner.freeWindows', { windows: free.windows.map((w) => `${formatMin(w.start)}–${formatMin(w.end)}`).join(' · ') })
+              : t(free.level === 'free' ? 'planner.freeAllDay' : free.level === 'busy' ? 'planner.noFreeTime' : 'planner.freeUnknown')}
+          </p>
+        )}
         {workouts.map((w) => (
           <WorkoutCard key={w.id} w={w} units={units} warning={warned.has(w.id)} onClick={() => open({ kind: 'workoutDetail', id: w.id })} />
         ))}

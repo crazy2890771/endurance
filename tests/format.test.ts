@@ -20,6 +20,10 @@ describe('units', () => {
     expect(formatDuration(45)).toBe('45 min');
     expect(formatDuration(100)).toBe('1h 40m');
     expect(formatDuration(120)).toBe('2h');
+    expect(formatDuration(0)).toBe('0 min');
+    expect(formatDuration(45, 'th')).toBe('45 นาที');
+    expect(formatDuration(100, 'th')).toBe('1 ชม. 40 นาที');
+    expect(formatDuration(120, 'th')).toBe('2 ชม.');
   });
 });
 

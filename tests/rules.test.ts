@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BUILTIN_DUTY_TYPES, DEFAULT_RULES } from '@/domain/catalog';
-import { clashingBlocks, dutiesShownOn, dutyBlocksOn, dutyEndDate, dutiesOnDate, evaluatePlan, freeWindows, restAfterOvernight, type RuleId } from '@/domain/rules';
+import { clashingBlocks, dayAvailability, dutiesShownOn, dutyBlocksOn, dutyEndDate, dutiesOnDate, evaluatePlan, freeWindows, restAfterOvernight, type RuleId } from '@/domain/rules';
 import type { Duty, DutyType, RuleConfig, Workout } from '@/domain/types';
 
 const ts = '2026-01-01T00:00:00.000Z';
@@ -304,5 +304,23 @@ describe('flight-day free windows', () => {
     const sim = { ...types[0], id: 'dt-sim', code: 'SIM', allowsTraining: 'no' as const };
     const blocks = dutyBlocksOn('2026-10-27', [duty('2026-10-27', 'dt-sim')], [...types, sim], 60);
     expect(freeWindows(blocks, 30)).toEqual([]);
+  });
+});
+
+describe('day availability', () => {
+  const rule = { bufferMin: 60, overnightRestMin: 480 };
+  it('grades days as free, partial, busy or unknown', () => {
+    expect(dayAvailability('2026-10-20', [], types, rule).level).toBe('unknown');
+    expect(dayAvailability('2026-10-20', [duty('2026-10-20', 'dt-off')], types, rule).level).toBe('free');
+    expect(dayAvailability('2026-10-20', [duty('2026-10-20', 'dt-standby', { startTime: '08:00', endTime: '16:00' })], types, rule).level).toBe('free');
+    const flight = dayAvailability('2026-10-21', [duty('2026-10-21', 'dt-flight', { startTime: '15:20', endTime: '01:12' })], types, rule);
+    expect(flight).toEqual({ level: 'partial', windows: [{ start: 300, end: 14 * 60 + 20 }] });
+    expect(dayAvailability('2026-10-21', [duty('2026-10-21', 'dt-flight', { startTime: '04:00', endTime: '22:30' })], types, rule).level).toBe('busy');
+    expect(dayAvailability('2026-10-21', [duty('2026-10-21', 'dt-flight')], types, rule)).toEqual({ level: 'partial', windows: [] });
+  });
+  it('counts the rest after an overnight duty on the next day', () => {
+    const night = duty('2026-10-21', 'dt-flight', { startTime: '15:20', endTime: '01:12' });
+    const next = dayAvailability('2026-10-22', [night, duty('2026-10-22', 'dt-off')], types, rule);
+    expect(next).toEqual({ level: 'partial', windows: [{ start: 9 * 60 + 12, end: 23 * 60 }] });
   });
 });

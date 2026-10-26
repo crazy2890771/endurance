@@ -4,6 +4,7 @@ import { format as dfFormat } from 'date-fns';
 import type { Language } from '@/domain/types';
 import { en, type TKey } from './en';
 import { th } from './th';
+import { setDurationLanguage } from '@/lib/format';
 
 const DICTS: Record<Language, Record<TKey, string>> = { en, th };
 
@@ -30,6 +31,7 @@ const I18nCtx = createContext<I18nValue>({
 
 export function I18nProvider({ lang, children }: { lang: Language; children: ReactNode }) {
   const value = useMemo<I18nValue>(() => {
+    setDurationLanguage(lang);
     const locale = lang === 'th' ? thLocale : enUS;
     return { lang, t: (k, p) => translate(lang, k, p), fmt: (d, p) => dfFormat(d, p, { locale }) };
   }, [lang]);
