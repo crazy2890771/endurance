@@ -9,6 +9,7 @@ import { createBackup, dutiesCsv, isBackup, restoreBackup, workoutsCsv } from '@
 import { loadDemoData } from '@/db/demo';
 import { db } from '@/db/db';
 import { DEFAULT_RULES, defaultHrZones } from '@/domain/catalog';
+import { DEFAULT_OVERNIGHT_REST_MIN } from '@/domain/rules';
 import type { AppSettings, HRZone, RuleConfig } from '@/domain/types';
 import { downloadFile, formatDuration } from '@/lib/format';
 import { todayISO } from '@/lib/dates';
@@ -87,6 +88,20 @@ export function RulesPage() {
                     label={t(`rules.${r.key}` as TKey)}
                     onChange={(v) => setRule(r.key, { [r.field as NumKey<typeof r.key>]: v } as never)}
                   />
+                )}
+                {cfg.enabled && r.key === 'dutyOverlap' && (
+                  <div className="mt-2">
+                    <p className="text-xs text-muted">{t('rules.dutyOverlap.rest')}</p>
+                    <NumRow
+                      value={(s.rules.dutyOverlap.overnightRestMin ?? DEFAULT_OVERNIGHT_REST_MIN) / 60}
+                      min={0}
+                      max={16}
+                      step={1}
+                      unit={t('rules.unit.hours')}
+                      label={t('rules.dutyOverlap.rest')}
+                      onChange={(v) => setRule('dutyOverlap', { overnightRestMin: v * 60 })}
+                    />
+                  </div>
                 )}
                 {cfg.enabled && r.key === 'runVolume' && (
                   <div className="mt-2">

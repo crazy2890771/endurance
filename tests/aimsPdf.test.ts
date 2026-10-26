@@ -79,7 +79,8 @@ describe('AIMS Personal Crew Schedule PDF', () => {
       ]),
       types,
     );
-    expect(brief(rows)).toEqual(['2026-11-28 Flight 14:45 00:05 FD3016 HKT–DMK', '2026-11-29 Flight 17:55 02:25 FD532 DMK–CAN–DMK']);
+    // 30/11 only finishes the night's duty, so it's an OFF day (29/11 has its own report, so it isn't).
+    expect(brief(rows)).toEqual(['2026-11-28 Flight 14:45 00:05 FD3016 HKT–DMK', '2026-11-29 Flight 17:55 02:25 FD532 DMK–CAN–DMK', '2026-11-30 OFF   >OFF']);
   });
 
   it('marks deadhead sectors and ends a duty without sign-off at its last arrival', () => {

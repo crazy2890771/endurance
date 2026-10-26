@@ -112,7 +112,8 @@ export interface RuleConfig {
   hardRecovery: { enabled: boolean; minHours: number };
   consecutiveRun: { enabled: boolean; maxDays: number };
   weeklyRest: { enabled: boolean; minDays: number };
-  dutyOverlap: { enabled: boolean; bufferMin: number };
+  /** bufferMin before/after a duty; after a duty that ends past midnight, overnightRestMin applies instead. */
+  dutyOverlap: { enabled: boolean; bufferMin: number; overnightRestMin?: number };
   runVolume: { enabled: boolean; maxIncreasePct: number; minBaseKm: number };
   /** Max long runs, interval sessions and tempo sessions per week — each counted separately. */
   keySessionsPerWeek: { enabled: boolean; max: number };

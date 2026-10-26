@@ -30,7 +30,7 @@ import {
   restoreWorkout,
   skipWorkout,
 } from '@/db/repo';
-import { dutiesOnDate } from '@/domain/rules';
+import { dutiesShownOn } from '@/domain/rules';
 import { addDaysISO, fromISODate, isValidISODate, todayISO } from '@/lib/dates';
 import { formatDistance, formatDuration } from '@/lib/format';
 import { useI18n } from '@/i18n';
@@ -60,7 +60,7 @@ export function WorkoutDetail() {
   if (!w) return <Sheet open onClose={close} title="">{null}</Sheet>;
 
   const typeById = new Map(dutyTypes?.map((d) => [d.id, d]));
-  const dayDuties = dutiesOnDate(duties ?? [], w.date);
+  const dayDuties = dutiesShownOn(duties ?? [], w.date);
   const mine = (warnings?.all ?? []).filter((x) => x.workoutIds.includes(w.id));
   const zone = w.hrZone ? settings.hrZones[w.hrZone] : undefined;
 

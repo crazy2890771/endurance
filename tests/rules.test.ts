@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BUILTIN_DUTY_TYPES, DEFAULT_RULES } from '@/domain/catalog';
-import { clashingBlocks, dutyBlocksOn, dutyEndDate, dutiesOnDate, evaluatePlan, freeWindows, type RuleId } from '@/domain/rules';
+import { clashingBlocks, dutiesShownOn, dutyBlocksOn, dutyEndDate, dutiesOnDate, evaluatePlan, freeWindows, restAfterOvernight, type RuleId } from '@/domain/rules';
 import type { Duty, DutyType, RuleConfig, Workout } from '@/domain/types';
 
 const ts = '2026-01-01T00:00:00.000Z';
@@ -154,9 +154,36 @@ describe('duty conflicts', () => {
     const d = duty('2026-10-22', 'dt-flight', { startTime: '22:10', endTime: '06:40' });
     expect(dutyEndDate(d)).toBe('2026-10-23');
     expect(dutiesOnDate([d], '2026-10-23')).toHaveLength(1);
-    const res = run([w('2026-10-23', { startTime: '07:00' })], only('dutyOverlap'), [d]);
-    expect(ids(res)).toEqual(['dutyOverlap']);
-    expect(run([w('2026-10-23', { startTime: '09:00' })], only('dutyOverlap'), [d])).toHaveLength(0);
+    expect(ids(run([w('2026-10-23', { startTime: '05:00' })], only('dutyOverlap'), [d]))).toEqual(['dutyOverlap']);
+    // After it ends, the next day needs the overnight rest (8 h by default): 06:40 + 8 h = 14:40.
+    const rest = run([w('2026-10-23', { startTime: '09:00' })], only('dutyOverlap'), [d]);
+    expect(ids(rest)).toEqual(['dutyRest']);
+    expect(rest[0].params).toMatchObject({ until: '14:40', hours: 8 });
+    expect(run([w('2026-10-23', { startTime: '14:40' })], only('dutyOverlap'), [d])).toHaveLength(0);
+  });
+
+  it('shows the day after a duty that spills past midnight as off, trainable after duty end + 8 h', () => {
+    // Report 15:20, debrief 01:12 the next day.
+    const d = duty('2026-10-21', 'dt-flight', { startTime: '15:20', endTime: '01:12' });
+    expect(dutiesShownOn([d], '2026-10-21')).toHaveLength(1);
+    expect(dutiesShownOn([d], '2026-10-22')).toHaveLength(0);
+    expect(restAfterOvernight('2026-10-22', [d], types)).toMatchObject({ until: 9 * 60 + 12, endedAt: 72 });
+    expect(restAfterOvernight('2026-10-23', [d], types)).toBeNull();
+    expect(freeWindows(dutyBlocksOn('2026-10-22', [d], types, 60), 45)[0]).toEqual({ start: 9 * 60 + 12, end: 23 * 60 });
+    expect(ids(run([w('2026-10-22', { startTime: '08:00' })], only('dutyOverlap'), [d]))).toEqual(['dutyRest']);
+    expect(run([w('2026-10-22', { startTime: '09:30' })], only('dutyOverlap'), [d])).toHaveLength(0);
+    // Without a start time it's only a reminder of when rest ends.
+    const info = run([w('2026-10-22')], only('dutyOverlap'), [d]);
+    expect(info.map((x) => [x.ruleId, x.severity])).toEqual([['dutyRest', 'info']]);
+    // The rest period is configurable.
+    const six = { ...only('dutyOverlap'), dutyOverlap: { enabled: true, bufferMin: 60, overnightRestMin: 360 } };
+    expect(run([w('2026-10-22', { startTime: '08:00' })], six, [d])).toHaveLength(0);
+  });
+
+  it('keeps the normal buffer, not the rest, before a duty and after one ending the same day', () => {
+    const d = duty('2026-10-22', 'dt-flight', { startTime: '05:30', endTime: '14:45' });
+    expect(run([w('2026-10-22', { startTime: '15:45' })], only('dutyOverlap'), [d])).toHaveLength(0);
+    expect(restAfterOvernight('2026-10-22', [d], types)).toBeNull();
   });
 
   it('never warns on duty types marked Training OK, such as standby', () => {
@@ -268,8 +295,8 @@ describe('flight-day free windows', () => {
   it('clips an overnight duty to the morning of the next day', () => {
     const night = duty('2026-10-13', 'dt-flight', { startTime: '20:15', endTime: '00:31' });
     const blocks = dutyBlocksOn('2026-10-14', [night], types, 60);
-    expect(blocks.map((b) => [b.start, b.end])).toEqual([[0, 91]]);
-    expect(freeWindows(blocks, 60)[0]).toEqual({ start: 300, end: 23 * 60 });
+    expect(blocks.map((b) => [b.start, b.end])).toEqual([[0, 31 + 8 * 60]]); // 8 h rest after 00:31
+    expect(freeWindows(blocks, 60)[0]).toEqual({ start: 8 * 60 + 31, end: 23 * 60 });
   });
 
   it('ignores Training OK duties and blocks a whole No-training day without times', () => {

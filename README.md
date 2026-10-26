@@ -71,6 +71,7 @@ docs/                 Deployment and Supabase guides
 | Consecutive running days | max 3 |
 | Rest days per week | min 1 |
 | Duty conflict buffer before and after a timed duty | 60 min |
+| Rest after a duty that ends past midnight (next day shows as OFF) | 8 h |
 | Weekly running-distance increase (only when the previous week is at least 10 km) | max +10% |
 | Long run / interval / tempo per week (Sun–Sat), each counted separately | max 1 of each |
 

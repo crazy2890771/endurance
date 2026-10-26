@@ -15,9 +15,9 @@ import {
   TYPES_BY_ACTIVITY,
   supportsIntervals,
 } from '@/domain/catalog';
-import type { Activity, HRZone, IntervalSet, Location, Workout, WorkoutTemplate, WorkoutType } from '@/domain/types';
+import type { Activity, Duty, HRZone, IntervalSet, Location, Workout, WorkoutTemplate, WorkoutType } from '@/domain/types';
 import { formatMin, isValidHHmm, isValidISODate, parseHHmm, todayISO } from '@/lib/dates';
-import { clashingBlocks, dutiesOnDate, dutyBlocksOn, freeWindows } from '@/domain/rules';
+import { clashingBlocks, dutiesOnDate, dutyBlocksOn, freeWindows, restAfterOvernight } from '@/domain/rules';
 import { DutyBadge } from '@/components/cards';
 import { distanceUnitLabel, inputToKm, kmToInput } from '@/lib/format';
 import { useI18n } from '@/i18n';
@@ -399,11 +399,16 @@ function DutyFit({ date, startTime, durationMin, onPick }: { date: string; start
   });
   if (!relevant.length) return null;
 
-  const buffer = settings.rules.dutyOverlap.bufferMin;
-  const blocks = dutyBlocksOn(date, duties, types, buffer);
+  const { bufferMin: buffer, overnightRestMin } = settings.rules.dutyOverlap;
+  const blocks = dutyBlocksOn(date, duties, types, buffer, overnightRestMin);
   const untimed = relevant.some((d) => !d.startTime || !d.endTime);
   const start = isValidHHmm(startTime) ? parseHHmm(startTime) : null;
   const clash = start !== null ? clashingBlocks(blocks, start, durationMin)[0] : undefined;
+  // The day after an overnight duty: free once its rest period is over.
+  const rest = restAfterOvernight(date, duties, types, overnightRestMin);
+  const restEnded = rest ? formatMin(rest.endedAt) : '';
+  const inRest = !!clash && !!rest && clash.duty.id === rest.duty.id && start! >= rest.endedAt;
+  const code = (d: Duty) => typeById.get(d.dutyTypeId)?.code ?? '';
   const windows = freeWindows(blocks, Math.max(durationMin, 15));
 
   return (
@@ -418,10 +423,13 @@ function DutyFit({ date, startTime, durationMin, onPick }: { date: string; start
           </div>
         ))}
       </div>
+      {rest && <p className="text-sm text-sky mb-1.5">{t('wizard.restUntil', { duty: code(rest.duty), until: formatMin(rest.until) })}</p>}
       {clash ? (
         <p className="text-sm text-danger flex items-start gap-1.5" role="alert">
           <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-          {t('wizard.clash', { duty: typeById.get(clash.duty.dutyTypeId)?.code ?? '', start: clash.duty.startTime ?? '', end: clash.duty.endTime ?? '', buffer })}
+          {inRest
+            ? t('wizard.clashRest', { duty: code(clash.duty), end: restEnded, until: formatMin(rest!.until) })
+            : t('wizard.clash', { duty: code(clash.duty), start: clash.duty.startTime ?? '', end: clash.duty.endTime ?? '', buffer })}
         </p>
       ) : start !== null && !untimed ? (
         <p className="text-sm text-mint flex items-center gap-1.5">

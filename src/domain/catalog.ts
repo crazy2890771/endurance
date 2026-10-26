@@ -78,7 +78,7 @@ export const DEFAULT_RULES: RuleConfig = {
   hardRecovery: { enabled: true, minHours: 48 },
   consecutiveRun: { enabled: true, maxDays: 3 },
   weeklyRest: { enabled: true, minDays: 1 },
-  dutyOverlap: { enabled: true, bufferMin: 60 },
+  dutyOverlap: { enabled: true, bufferMin: 60, overnightRestMin: 480 },
   runVolume: { enabled: true, maxIncreasePct: 10, minBaseKm: 10 },
   keySessionsPerWeek: { enabled: true, max: 1 },
 };

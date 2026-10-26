@@ -7,9 +7,9 @@ import { DutyBadge, WorkoutCard } from '@/components/cards';
 import { ACTIVITY_BAR } from '@/components/icons';
 import { useDuties, useDutyTypes, useSettingsOrDefault, useWorkouts } from '@/db/hooks';
 import { moveWorkout } from '@/db/repo';
-import { dutiesOnDate, dutyEndDate, effectiveDistanceKm } from '@/domain/rules';
+import { dutiesShownOn, dutyEndDate, effectiveDistanceKm, restAfterOvernight } from '@/domain/rules';
 import type { Duty, DutyType, ISODate, Workout } from '@/domain/types';
-import { addDaysISO, fromISODate, isValidISODate, monthBounds, monthGrid, todayISO, weekDays } from '@/lib/dates';
+import { addDaysISO, formatMin, fromISODate, isValidISODate, monthBounds, monthGrid, todayISO, weekDays } from '@/lib/dates';
 import { formatDuration, formatKm } from '@/lib/format';
 import { useI18n } from '@/i18n';
 import { usePlanWarnings } from '@/features/plancheck/usePlanWarnings';
@@ -49,6 +49,11 @@ export function PlannerPage() {
     for (const w of workouts ?? []) m.set(w.date, [...(m.get(w.date) ?? []), w]);
     return m;
   }, [workouts]);
+  // The day after an overnight duty shows as off, with the time training is fine again.
+  const restUntil = (d: ISODate) => {
+    const r = restAfterOvernight(d, duties ?? [], dutyTypes ?? [], settings.rules.dutyOverlap.overnightRestMin);
+    return r ? formatMin(r.until) : undefined;
+  };
   const warnedIds = useMemo(() => new Set((warnings?.active ?? []).filter((w) => w.severity === 'warning').flatMap((w) => w.workoutIds)), [warnings]);
 
   const go = (date: ISODate, v: View = view) => {
@@ -138,7 +143,8 @@ export function PlannerPage() {
                   date={d}
                   today={today}
                   workouts={byDate.get(d) ?? []}
-                  duties={dutiesOnDate(duties ?? [], d)}
+                  duties={dutiesShownOn(duties ?? [], d)}
+                  restUntil={restUntil(d)}
                   typeById={typeById}
                   warned={warnedIds}
                   moving={!!moving}
@@ -156,6 +162,7 @@ export function PlannerPage() {
             selected={selected}
             byDate={byDate}
             duties={duties ?? []}
+            restUntil={restUntil}
             typeById={typeById}
             warned={warnedIds}
             onPick={onDayTap}
@@ -213,6 +220,7 @@ function DayRow({
   today,
   workouts,
   duties,
+  restUntil,
   typeById,
   warned,
   moving,
@@ -222,6 +230,7 @@ function DayRow({
   today: ISODate;
   workouts: Workout[];
   duties: Duty[];
+  restUntil?: string;
   typeById: Map<string, DutyType>;
   warned: Set<string>;
   moving: boolean;
@@ -252,7 +261,8 @@ function DayRow({
               {d.startTime && d.endTime && <span className="text-[11px] text-muted">{dutyTimeLabel(d, date)}</span>}
             </button>
           ))}
-          {duties.length === 0 && !moving && (
+          {restUntil && <span className="chip min-h-[28px] px-2 text-[11px] bg-sky/10 text-sky">{t('planner.trainAfter', { time: restUntil })}</span>}
+          {duties.length === 0 && !restUntil && !moving && (
             <button className="inline-flex items-center gap-1 text-[11px] text-muted rounded-lg border border-dashed border-line px-2 h-7" onClick={() => open({ kind: 'dutyEditor', date })}>
               <Plane size={12} /> {t('planner.addDuty')}
             </button>
@@ -308,6 +318,7 @@ function MonthView({
   selected,
   byDate,
   duties,
+  restUntil,
   typeById,
   warned,
   onPick,
@@ -318,6 +329,7 @@ function MonthView({
   selected: ISODate;
   byDate: Map<ISODate, Workout[]>;
   duties: Duty[];
+  restUntil: (d: ISODate) => string | undefined;
   typeById: Map<string, DutyType>;
   warned: Set<string>;
   onPick: (d: ISODate) => void;
@@ -336,7 +348,7 @@ function MonthView({
       <div className="grid grid-cols-7 gap-1">
         {days.map((d) => {
           const ws = byDate.get(d) ?? [];
-          const ds = dutiesOnDate(duties, d);
+          const ds = dutiesShownOn(duties, d);
           const inMonth = d.startsWith(month);
           const isToday = d === today;
           return (
@@ -358,12 +370,12 @@ function MonthView({
           );
         })}
       </div>
-      <DayDetail date={sel} workouts={byDate.get(sel) ?? []} duties={dutiesOnDate(duties, sel)} typeById={typeById} warned={warned} units={settings.units} t={t} />
+      <DayDetail date={sel} workouts={byDate.get(sel) ?? []} duties={dutiesShownOn(duties, sel)} restUntil={restUntil(sel)} typeById={typeById} warned={warned} units={settings.units} t={t} />
     </>
   );
 }
 
-function DayDetail({ date, workouts, duties, typeById, warned, units, t }: { date: ISODate; workouts: Workout[]; duties: Duty[]; typeById: Map<string, DutyType>; warned: Set<string>; units: 'metric' | 'imperial'; t: ReturnType<typeof useI18n>['t'] }) {
+function DayDetail({ date, workouts, duties, restUntil, typeById, warned, units, t }: { date: ISODate; workouts: Workout[]; duties: Duty[]; restUntil?: string; typeById: Map<string, DutyType>; warned: Set<string>; units: 'metric' | 'imperial'; t: ReturnType<typeof useI18n>['t'] }) {
   const { fmt } = useI18n();
   const { open } = useUI();
   return (
@@ -389,6 +401,7 @@ function DayDetail({ date, workouts, duties, typeById, warned, units, t }: { dat
             </span>
           </button>
         ))}
+        {restUntil && <p className="card px-3 py-2.5 text-sm text-sky">{t('planner.trainAfter', { time: restUntil })}</p>}
         {workouts.map((w) => (
           <WorkoutCard key={w.id} w={w} units={units} warning={warned.has(w.id)} onClick={() => open({ kind: 'workoutDetail', id: w.id })} />
         ))}

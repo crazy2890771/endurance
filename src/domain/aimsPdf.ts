@@ -122,6 +122,8 @@ export function parseAimsRoster(items: PdfTextItem[], types: DutyType[]): Parsed
     col.tokens.sort((a, b) => a.y - b.y || a.x - b.x);
     if (open && !(open as OpenDuty).continues) close();
     if (open) (open as OpenDuty).continues = false;
+    const carried = !!open;
+    const emitted = out.length;
     let ground: { code: string; start?: HHmm } | null = null;
     let skipTime = false;
 
@@ -180,6 +182,12 @@ export function parseAimsRoster(items: PdfTextItem[], types: DutyType[]): Parsed
       }
     }
     if (ground) out.push({ date: col.date, startTime: ground.start, raw: ground.code, title: ground.code, dutyTypeId: typeFor(ground.code), sourceKey: `aims:${col.date}:${ground.code}` });
+    // A day that only finishes the previous day's duty isn't a flight day: it's off once rested.
+    const own = out.slice(emitted).some((d) => d.date === col.date) || (open as OpenDuty | null)?.date === col.date;
+    if (carried && out.length > emitted && !own && !open) {
+      const id = AIMS_STATUS_TYPE['>OFF'];
+      out.push({ date: col.date, raw: '↓', title: '>OFF', dutyTypeId: types.some((x) => x.id === id) ? id : undefined, sourceKey: `aims:${col.date}:>OFF` });
+    }
   }
   close();
 

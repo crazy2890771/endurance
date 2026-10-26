@@ -2,6 +2,11 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.7.0 — 2026-10-26
+- A duty that runs past midnight (e.g. report 15:20, debrief 01:12) belongs to its report day only. The next day is no longer shown as a flight day: it shows as **OFF** with "Train after …", and workouts are fine once the duty has ended plus **8 hours** of rest (09:12 in that example).
+- Planning inside that rest period raises a "Rest after FLT until …" warning; the editor shows the rest end and offers free windows from then. The rest length is adjustable under Training Rules → Duty conflicts.
+- AIMS import adds an OFF day for dates that only finish the previous night's duty.
+
 ## 1.6.0 — 2026-10-26
 - Weeks now run **Sunday–Saturday** (existing installs switch once; change it under Settings → Units, Language & Theme).
 - New weekly limit: at most **1 long run, 1 interval and 1 tempo** per week, each counted on its own (any activity for interval/tempo). It replaces the old long-runs-per-week rule and can be adjusted under Training Rules.

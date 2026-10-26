@@ -7,8 +7,8 @@ import { DutyBadge, WorkoutCard, workoutName } from '@/components/cards';
 import { ACTIVITY_BG, ACTIVITY_ICON, ACTIVITY_TEXT, ActivityBadge } from '@/components/icons';
 import { useDuties, useDutyTypes, useSettingsOrDefault, useWorkouts } from '@/db/hooks';
 import { TRAINING_ACTIVITIES } from '@/domain/catalog';
-import { dutiesOnDate, effectiveDistanceKm } from '@/domain/rules';
-import { addDaysISO, fromISODate, todayISO, weekDays } from '@/lib/dates';
+import { dutiesShownOn, effectiveDistanceKm, restAfterOvernight } from '@/domain/rules';
+import { addDaysISO, formatMin, fromISODate, todayISO, weekDays } from '@/lib/dates';
 import { formatDistance, formatDuration, formatKm } from '@/lib/format';
 import { useI18n } from '@/i18n';
 import { versionLabel } from '@/lib/version';
@@ -28,7 +28,8 @@ export function HomePage() {
 
   const todays = (workouts ?? []).filter((w) => w.date === today);
   const main = todays.find((w) => w.status === 'planned') ?? todays[0];
-  const todayDuties = dutiesOnDate(duties ?? [], today);
+  const todayDuties = dutiesShownOn(duties ?? [], today);
+  const rest = restAfterOvernight(today, duties ?? [], dutyTypes ?? [], settings.rules.dutyOverlap.overnightRestMin);
   const weekW = (workouts ?? []).filter((w) => w.date >= week[0] && w.date <= week[6] && w.activity !== 'rest');
   const done = weekW.filter((w) => w.status === 'completed');
   const total = weekW.filter((w) => w.status !== 'skipped').length;
@@ -53,6 +54,7 @@ export function HomePage() {
       {/* Duty */}
       <div className="mt-3 flex items-center gap-2 flex-wrap">
         <span className="text-xs uppercase tracking-wider text-muted mr-1">{t('home.todayDuty')}</span>
+        {rest && <span className="chip min-h-[28px] px-2 text-xs bg-sky/10 text-sky">{t('planner.trainAfter', { time: formatMin(rest.until) })}</span>}
         {todayDuties.length ? (
           todayDuties.map((d) => (
             <button key={d.id} className="flex items-center gap-2" onClick={() => open({ kind: 'dutyEditor', id: d.id })}>
@@ -63,7 +65,7 @@ export function HomePage() {
               </span>
             </button>
           ))
-        ) : (
+        ) : rest ? null : (
           <button className="inline-flex items-center gap-1 text-xs text-muted rounded-lg border border-dashed border-line px-2 h-7" onClick={() => open({ kind: 'dutyEditor', date: today })}>
             <Plane size={12} /> {t('home.noDuty')}
           </button>
@@ -167,7 +169,7 @@ export function HomePage() {
       {upcoming.length ? (
         <div className="flex flex-col gap-2">
           {upcoming.map((w) => {
-            const d = dutiesOnDate(duties ?? [], w.date)[0];
+            const d = dutiesShownOn(duties ?? [], w.date)[0];
             return (
               <div key={w.id} className="flex items-center gap-3">
                 <div className="w-12 text-center shrink-0">

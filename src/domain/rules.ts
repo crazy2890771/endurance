@@ -16,6 +16,7 @@ export type RuleId =
   | 'dutyOverlap'
   | 'dutyNoTraining'
   | 'dutyLimited'
+  | 'dutyRest'
   | 'runVolume'
   | 'longRunPerWeek'
   | 'intervalPerWeek'
@@ -41,6 +42,12 @@ export interface EvaluateInput {
   to: ISODate;
   weekStartsOn?: 0 | 1;
 }
+
+/** Epoch minutes → local "HH:mm". */
+const fmtClock = (epochMin: number) => {
+  const d = new Date(epochMin * 60000);
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+};
 
 /** Default time assumed for comparisons when a workout has no start time. */
 const DEFAULT_START = '12:00';
@@ -96,6 +103,38 @@ export function dutiesOnDate(duties: Duty[], date: ISODate): Duty[] {
   return duties.filter((d) => !d.deleted && d.date <= date && dutyEndDate(d) >= date);
 }
 
+/** A timed duty that runs past midnight belongs to its start day; the next day isn't shown as that duty. */
+const spillsInto = (d: Duty, date: ISODate) => d.date < date && !!d.startTime && !!d.endTime;
+
+/** Duties to show on a calendar day: those starting that day, plus untimed multi-day ones such as leave. */
+export const dutiesShownOn = (duties: Duty[], date: ISODate) => dutiesOnDate(duties, date).filter((d) => !spillsInto(d, date));
+
+export const DEFAULT_OVERNIGHT_REST_MIN = 8 * 60;
+
+/** Time kept clear after a duty: the rest period if it ended past midnight, else the normal buffer. */
+export const afterDutyMin = (d: Duty, bufferMin: number, overnightRestMin = DEFAULT_OVERNIGHT_REST_MIN) =>
+  dutyEndDate(d) > d.date ? overnightRestMin : bufferMin;
+
+/**
+ * On the day after an overnight duty that restricts training: the minute of `date` from which
+ * training is fine again (duty end + overnight rest), with the duty. Null when nothing applies.
+ */
+export function restAfterOvernight(date: ISODate, duties: Duty[], dutyTypes: DutyType[], overnightRestMin = DEFAULT_OVERNIGHT_REST_MIN) {
+  const day0 = toEpochMin(date, '00:00');
+  let best: { until: number; endedAt: number; duty: Duty } | null = null;
+  for (const d of dutiesOnDate(duties, date)) {
+    if (!spillsInto(d, date)) continue;
+    const type = dutyTypes.find((t) => t.id === d.dutyTypeId);
+    if (!type || type.allowsTraining === 'yes') continue;
+    const win = dutyWindow(d);
+    if (!win) continue;
+    const endedAt = win[1] - day0;
+    const until = endedAt + overnightRestMin;
+    if (until > 0 && (!best || until > best.until)) best = { until: Math.min(until, 1440), endedAt: Math.max(endedAt, 0), duty: d };
+  }
+  return best;
+}
+
 /** A busy stretch of one day, in minutes from 00:00 (buffer included, clipped to the day). */
 export interface DutyBlock {
   start: number;
@@ -107,7 +146,7 @@ export interface DutyBlock {
  * Busy blocks on `date` from duties that restrict training. "Training OK" types never block;
  * a "No training" duty without times blocks the whole day; a "Limited" one without times can't be placed.
  */
-export function dutyBlocksOn(date: ISODate, duties: Duty[], dutyTypes: DutyType[], bufferMin: number): DutyBlock[] {
+export function dutyBlocksOn(date: ISODate, duties: Duty[], dutyTypes: DutyType[], bufferMin: number, overnightRestMin = DEFAULT_OVERNIGHT_REST_MIN): DutyBlock[] {
   const day0 = toEpochMin(date, '00:00');
   return dutiesOnDate(duties, date).flatMap((d) => {
     const type = dutyTypes.find((t) => t.id === d.dutyTypeId);
@@ -115,7 +154,7 @@ export function dutyBlocksOn(date: ISODate, duties: Duty[], dutyTypes: DutyType[
     const win = dutyWindow(d);
     if (!win) return type.allowsTraining === 'no' ? [{ start: 0, end: 1440, duty: d }] : [];
     const start = Math.max(0, win[0] - bufferMin - day0);
-    const end = Math.min(1440, win[1] + bufferMin - day0);
+    const end = Math.min(1440, win[1] + afterDutyMin(d, bufferMin, overnightRestMin) - day0);
     return end > start ? [{ start, end, duty: d }] : [];
   });
 }
@@ -227,8 +266,22 @@ export function evaluatePlan(input: EvaluateInput): RuleWarning[] {
         if (win && w.startTime) {
           const ws = toEpochMin(w.date, w.startTime);
           const we = ws + w.durationMin;
-          if (ws < win[1] + buffer && we > win[0] - buffer) {
-            out.push(warn('dutyOverlap', 'warning', [w.date], [w.id], { duty: label, start: d.startTime!, end: d.endTime!, buffer }, [d.id]));
+          const after = afterDutyMin(d, buffer, rules.dutyOverlap.overnightRestMin);
+          if (ws < win[1] + after && we > win[0] - buffer) {
+            const inRest = ws >= win[1] && dutyEndDate(d) > d.date;
+            out.push(
+              inRest
+                ? warn('dutyRest', 'warning', [w.date], [w.id], { duty: label, end: d.endTime!, hours: Math.round(after / 6) / 10, until: fmtClock(win[1] + after) }, [d.id])
+                : warn('dutyOverlap', 'warning', [w.date], [w.id], { duty: label, start: d.startTime!, end: d.endTime!, buffer }, [d.id]),
+            );
+          }
+          continue;
+        }
+        if (win && spillsInto(d, w.date)) {
+          // The day after an overnight duty is a day off once the rest period is over.
+          const after = afterDutyMin(d, buffer, rules.dutyOverlap.overnightRestMin);
+          if (win[1] + after > toEpochMin(w.date, '00:00')) {
+            out.push(warn('dutyRest', 'info', [w.date], [w.id], { duty: label, end: d.endTime!, hours: Math.round(after / 6) / 10, until: fmtClock(win[1] + after) }, [d.id]));
           }
           continue;
         }
