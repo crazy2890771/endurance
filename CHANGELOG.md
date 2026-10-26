@@ -2,6 +2,9 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.3.3 — 2026-10-26
+- Version and commit now show at the top of Settings and at the bottom of Home, in addition to the splash and Settings → About.
+
 ## 1.3.2 — 2026-10-26
 - Import roster now offers only **Upload AIMS roster (PDF)**. CSV, ICS, other-PDF and JSON options were removed from the screen. A PDF that isn't an AIMS report gets a clear message.
 

@@ -16,7 +16,7 @@ import { ListLink, PageHeader } from '@/components/ui';
 import { Logo } from '@/components/Logo';
 import { useI18n } from '@/i18n';
 import { useSyncStatus } from '@/sync/sync';
-import { APP_BUILT_AT, APP_COMMIT, APP_VERSION } from '@/lib/version';
+import { APP_BUILT_AT, APP_COMMIT, APP_VERSION, versionLabel } from '@/lib/version';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -63,7 +63,10 @@ export function SettingsPage() {
 
   return (
     <div className="pb-28">
-      <PageHeader title={t('settings.title')} />
+      <PageHeader
+        title={t('settings.title')}
+        right={<span className="mr-3 rounded-lg bg-card2 px-2 py-1 text-[11px] font-semibold text-muted tabular-nums">{versionLabel()}</span>}
+      />
       <div className="px-4 flex flex-col gap-4">
         <nav className="card divide-y divide-line/50 overflow-hidden">
           <ListLink to="/settings/duties" icon={<Plane size={20} />} title={t('settings.duty')} sub={t('settings.duty.sub')} />

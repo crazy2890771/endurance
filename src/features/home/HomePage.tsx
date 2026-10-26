@@ -11,6 +11,7 @@ import { dutiesOnDate, effectiveDistanceKm } from '@/domain/rules';
 import { addDaysISO, fromISODate, todayISO, weekDays } from '@/lib/dates';
 import { formatDistance, formatDuration, formatKm } from '@/lib/format';
 import { useI18n } from '@/i18n';
+import { versionLabel } from '@/lib/version';
 import { usePlanWarnings } from '@/features/plancheck/usePlanWarnings';
 
 export function HomePage() {
@@ -188,6 +189,10 @@ export function HomePage() {
       <button className="btn-sky w-full mt-6" onClick={() => open({ kind: 'workoutEditor', date: today })}>
         <Plus size={20} /> {t('home.quickAdd')}
       </button>
+
+      <Link to="/settings" className="block text-center text-[11px] text-muted tabular-nums mt-6 py-2">
+        {versionLabel()}
+      </Link>
     </div>
   );
 }
