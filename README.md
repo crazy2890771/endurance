@@ -1,4 +1,6 @@
-# KIM ENDURANCE LAB
+# KIM · Ground Time
+
+*Your free time, planned.* (Formerly KIM Endurance Lab.)
 
 A mobile-first, offline-capable Progressive Web App for planning running, cycling, swimming and strength training around an irregular airline flight-duty roster.
 

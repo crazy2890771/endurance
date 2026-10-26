@@ -10,6 +10,7 @@ export class EnduranceDB extends Dexie {
   overrides!: Table<RuleOverride, string>;
   conflicts!: Table<SyncConflict, string>;
 
+  // The database keeps its original name so existing data survives the rename to Ground Time.
   constructor(name = 'kim-endurance-lab') {
     super(name);
     this.version(1).stores({

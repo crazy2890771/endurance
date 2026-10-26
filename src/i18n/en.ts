@@ -1,6 +1,6 @@
 export const en = {
-  'app.name': 'KIM ENDURANCE LAB',
-  'app.tagline': 'TRAIN • TRACK • BALANCE',
+  'app.name': 'KIM · GROUND TIME',
+  'app.tagline': 'YOUR FREE TIME, PLANNED',
   'app.sub': 'Running, cycling, swimming and strength — planned around your flight schedule.',
 
   'nav.home': 'Home',
@@ -365,7 +365,7 @@ export const en = {
   'data.import': 'Restore from backup',
   'data.importHint': 'Merges with existing data. Newer versions of the same record win.',
   'data.restored': 'Restored {n} records',
-  'data.invalid': 'This is not a KIM Endurance Lab backup file.',
+  'data.invalid': 'This is not a Ground Time backup file.',
   'data.demo': 'Load demo data',
   'data.demoLoaded': 'Demo data loaded',
   'data.clear': 'Erase all data on this device',

@@ -1,4 +1,4 @@
--- KIM ENDURANCE LAB — optional cloud sync schema for Supabase.
+-- KIM · Ground Time — optional cloud sync schema for Supabase.
 -- Run this once in the Supabase SQL editor of YOUR OWN project.
 -- Every row is owned by the signed-in user and protected by Row Level Security.
 

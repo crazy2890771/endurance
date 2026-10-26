@@ -48,8 +48,8 @@ export default defineConfig({
       registerType: 'prompt',
       includeAssets: ['icons/favicon.svg', 'icons/apple-touch-icon.png'],
       manifest: {
-        name: 'KIM ENDURANCE LAB',
-        short_name: 'KIM Lab',
+        name: 'KIM · Ground Time',
+        short_name: 'Ground Time',
         description: 'Plan running, cycling, swimming and strength training around a flight-duty roster.',
         theme_color: '#090D10',
         background_color: '#090D10',

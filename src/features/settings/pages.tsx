@@ -243,7 +243,7 @@ export function DataPage() {
   }, []);
 
   const stamp = todayISO();
-  const exportJson = async () => downloadFile(`kim-endurance-backup-${stamp}.json`, JSON.stringify(await createBackup(), null, 2), 'application/json');
+  const exportJson = async () => downloadFile(`ground-time-backup-${stamp}.json`, JSON.stringify(await createBackup(), null, 2), 'application/json');
   const restore = async (f?: File) => {
     if (!f) return;
     try {
@@ -276,10 +276,10 @@ export function DataPage() {
         <button className="btn-primary justify-start" onClick={exportJson}>
           <FileJson size={20} /> {t('data.export')}
         </button>
-        <button className="btn-ghost justify-start" onClick={async () => downloadFile(`kim-workouts-${stamp}.csv`, await workoutsCsv(), 'text/csv')}>
+        <button className="btn-ghost justify-start" onClick={async () => downloadFile(`ground-time-workouts-${stamp}.csv`, await workoutsCsv(), 'text/csv')}>
           <FileDown size={20} /> {t('data.exportCsv')}
         </button>
-        <button className="btn-ghost justify-start" onClick={async () => downloadFile(`kim-duties-${stamp}.csv`, await dutiesCsv(), 'text/csv')}>
+        <button className="btn-ghost justify-start" onClick={async () => downloadFile(`ground-time-duties-${stamp}.csv`, await dutiesCsv(), 'text/csv')}>
           <FileDown size={20} /> {t('data.exportDuties')}
         </button>
         <button className="btn-ghost justify-start mt-4" onClick={() => file.current?.click()}>

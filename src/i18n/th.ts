@@ -1,8 +1,8 @@
 import type { TKey } from './en';
 
 export const th: Record<TKey, string> = {
-  'app.name': 'KIM ENDURANCE LAB',
-  'app.tagline': 'ฝึก • บันทึก • สมดุล',
+  'app.name': 'KIM · GROUND TIME',
+  'app.tagline': 'วางแผนเวลาว่างของคุณ',
   'app.sub': 'วิ่ง ปั่น ว่าย และเวทเทรนนิ่ง — วางแผนให้เข้ากับตารางบินของคุณ',
 
   'nav.home': 'หน้าแรก',
@@ -367,7 +367,7 @@ export const th: Record<TKey, string> = {
   'data.import': 'กู้คืนจากไฟล์สำรอง',
   'data.importHint': 'รวมกับข้อมูลเดิม รายการเดียวกันที่ใหม่กว่าจะถูกใช้',
   'data.restored': 'กู้คืน {n} รายการ',
-  'data.invalid': 'ไฟล์นี้ไม่ใช่ไฟล์สำรองของ KIM Endurance Lab',
+  'data.invalid': 'ไฟล์นี้ไม่ใช่ไฟล์สำรองของ Ground Time',
   'data.demo': 'โหลดข้อมูลตัวอย่าง',
   'data.demoLoaded': 'โหลดข้อมูลตัวอย่างแล้ว',
   'data.clear': 'ลบข้อมูลทั้งหมดในอุปกรณ์นี้',

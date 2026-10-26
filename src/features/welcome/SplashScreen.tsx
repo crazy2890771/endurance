@@ -47,11 +47,8 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
       </svg>
       <div className="relative z-10 flex flex-col items-center -mt-24 animate-rise">
         <Logo className="w-24 h-16 text-white" />
-        <h1 className="text-4xl font-extrabold tracking-tight mt-4 leading-tight text-white">
-          KIM
-          <br />
-          ENDURANCE LAB
-        </h1>
+        <p className="mt-4 text-xs font-bold tracking-[.4em] text-white/70">KIM</p>
+        <h1 className="text-4xl font-extrabold tracking-tight mt-1 leading-tight text-white">GROUND TIME</h1>
         <p className={`text-sky mt-3 font-semibold ${lang === 'th' ? 'text-sm' : 'text-xs tracking-[.3em]'}`}>{t('app.tagline')}</p>
       </div>
       <p className="absolute bottom-[calc(max(env(safe-area-inset-bottom),32px)+14px)] inset-x-0 z-10 flex justify-center">

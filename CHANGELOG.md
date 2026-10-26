@@ -2,6 +2,9 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.3.0 — 2026-10-26
+- Renamed to **KIM · Ground Time** ("Your free time, planned"). The home-screen icon is labelled *Ground Time*. Data, backups and links carry over unchanged.
+
 ## 1.2.2 — 2026-10-26
 - Splash screen shortened from 3 to 1.5 seconds.
 

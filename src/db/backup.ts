@@ -3,6 +3,7 @@ import { csvEscape } from '@/lib/format';
 import { db } from './db';
 import { nowIso } from './repo';
 
+// Original identifier kept so backups made before the rename still restore.
 export const BACKUP_FORMAT = 'kim-endurance-lab-backup';
 
 export interface Backup {
