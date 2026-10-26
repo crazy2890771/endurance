@@ -11,6 +11,7 @@ import {
   importDuties,
   moveWorkout,
   reorderWorkout,
+  rosterChanges,
   saveDuty,
   saveWorkout,
   skipWorkout,
@@ -91,9 +92,38 @@ describe('duties', () => {
     await saveDuty({ date: '2026-10-21', dutyTypeId: 'dt-flight', startTime: '05:30', endTime: '14:45', source: 'aims', sourceKey: 'aims:2026-10-21' });
     await saveDuty({ date: '2026-10-22', dutyTypeId: 'dt-off', source: 'manual' });
     const r = await importDuties([{ date: '2026-10-21', dutyTypeId: 'dt-flight', startTime: '06:10', endTime: '15:00', source: 'aims', sourceKey: 'aims:2026-10-21' }], { replace: true });
-    expect(r).toEqual({ added: 1, skipped: 0, replaced: 1 });
+    expect(r).toMatchObject({ added: 1, skipped: 0, replaced: 1 });
     const live = (await db.duties.toArray()).filter((d) => !d.deleted);
     expect(live.map((d) => `${d.date} ${d.startTime ?? ''}`).sort()).toEqual(['2026-10-21 06:10', '2026-10-22 ']);
+  });
+
+  it('on a roster update, removes planned workouts only on days whose duty changed', async () => {
+    const v1 = [
+      { date: '2026-11-02', dutyTypeId: 'dt-flight', startTime: '08:00', endTime: '16:00', title: 'FD100 DMK–CNX–DMK', source: 'aims' as const },
+      { date: '2026-11-03', dutyTypeId: 'dt-off', source: 'aims' as const },
+    ];
+    expect((await importDuties(v1, { replace: true })).removedWorkoutIds).toEqual([]); // first import never touches workouts
+    const moved = await saveWorkout(draft({ date: '2026-11-02', startTime: '17:30' }));
+    const done = await saveWorkout(draft({ date: '2026-11-02', startTime: '06:00' }));
+    await completeWorkout(done.id, { durationMin: 40 });
+    const kept = await saveWorkout(draft({ date: '2026-11-03' }));
+
+    const v2 = [{ ...v1[0], startTime: '15:00', endTime: '23:00' }, v1[1]];
+    const res = await importDuties(v2, { replace: true });
+    expect(res.changedDates).toEqual(['2026-11-02']);
+    expect(res.removedWorkoutIds).toEqual([moved.id]);
+    expect((await db.workouts.get(moved.id))?.deleted).toBe(true);
+    expect((await db.workouts.get(done.id))?.deleted).toBeFalsy(); // completed history stays
+    expect((await db.workouts.get(kept.id))?.deleted).toBeFalsy(); // unchanged day stays
+
+    // Re-importing the same roster changes nothing.
+    expect((await importDuties(v2, { replace: true })).changedDates).toEqual([]);
+  });
+
+  it('treats a changed route on the same times as a change', async () => {
+    await importDuties([{ date: '2026-11-05', dutyTypeId: 'dt-flight', startTime: '08:00', endTime: '16:00', title: 'FD1 DMK–HKT–DMK', source: 'aims' }], { replace: true });
+    const c = await rosterChanges([{ date: '2026-11-05', dutyTypeId: 'dt-flight', startTime: '08:00', endTime: '16:00', title: 'FD2 DMK–CNX–DMK', source: 'aims' }]);
+    expect(c.changedDates).toEqual(['2026-11-05']);
   });
 
   it('does not delete built-in or in-use duty types', async () => {

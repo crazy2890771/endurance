@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, FileText, Upload } from 'lucide-react';
+import { AlertTriangle, CalendarSync, FileText, Upload } from 'lucide-react';
 import { useUI } from '@/app/ui';
 import { EmptyState, PageHeader, Spinner } from '@/components/ui';
 import { useDutyTypes } from '@/db/hooks';
-import { findDuplicateDuties, importDuties, type DutyDraft } from '@/db/repo';
+import { findDuplicateDuties, importDuties, restoreWorkout, rosterChanges, type DutyDraft, type RosterChanges } from '@/db/repo';
 import { isAimsRoster, parseAimsRoster } from '@/domain/aimsPdf';
 import { extractPdfItems, type ParsedDuty } from '@/domain/importers';
-import { isValidHHmm, isValidISODate } from '@/lib/dates';
+import { fromISODate, isValidHHmm, isValidISODate } from '@/lib/dates';
+import { workoutName } from '@/components/cards';
 import { useI18n } from '@/i18n';
 
 interface Row extends ParsedDuty {
@@ -17,7 +18,7 @@ interface Row extends ParsedDuty {
 
 /** Roster import: one AIMS Personal Crew Schedule Report PDF at a time, reviewed before saving. */
 export function ImportPage() {
-  const { t } = useI18n();
+  const { t, fmt } = useI18n();
   const { toast } = useUI();
   const nav = useNavigate();
   const types = useDutyTypes();
@@ -76,9 +77,31 @@ export function ImportPage() {
     if (replace) setRows((rs) => rs?.map((r) => (r.duplicate && r.dutyTypeId ? { ...r, include: true } : r)) ?? rs);
   }, [replace]);
 
+  // Preview which days changed against the stored roster, and which planned workouts that removes.
+  const [changes, setChanges] = useState<RosterChanges | null>(null);
+  const selectedKey = selected.map((r) => [r.date, r.dutyTypeId, r.startTime, r.endTime, r.title].join('|')).join(';');
+  useEffect(() => {
+    let alive = true;
+    if (!rows || !replace) {
+      setChanges(null);
+      return;
+    }
+    void rosterChanges(selected.map((r) => toDraft(r, r.dutyTypeId!))).then((c) => alive && setChanges(c));
+    return () => {
+      alive = false;
+    };
+  }, [selectedKey, replace]); // eslint-disable-line react-hooks/exhaustive-deps
+  const changed = new Set(changes?.changedDates ?? []);
+  const shortDate = (d: string) => fmt(fromISODate(d), 'd MMM');
+
   const save = async () => {
     const res = await importDuties(selected.map((r) => toDraft(r, r.dutyTypeId!)), { replace });
-    toast(res.replaced ? t('import.doneReplaced', res) : t('import.done', res));
+    const counts = { added: res.added, skipped: res.skipped, replaced: res.replaced, removed: res.removedWorkoutIds.length };
+    if (res.removedWorkoutIds.length) {
+      toast(t('import.doneRemoved', counts), {
+        action: { label: t('common.undo'), run: () => void Promise.all(res.removedWorkoutIds.map(restoreWorkout)) },
+      });
+    } else toast(res.replaced ? t('import.doneReplaced', counts) : t('import.done', counts));
     nav('/settings/duties');
   };
 
@@ -127,6 +150,29 @@ export function ImportPage() {
                 <span className="block text-xs text-muted">{t('import.replaceHint')}</span>
               </span>
             </label>
+            {changes && changes.changedDates.length > 0 && (
+              <div className="card border-warn/50 bg-warn/5 px-3 py-3 mb-3 flex items-start gap-3">
+                <CalendarSync size={20} className="text-warn shrink-0 mt-0.5" />
+                <div className="min-w-0 text-sm">
+                  <p className="font-semibold">{t('import.changes', { n: changes.changedDates.length, dates: changes.changedDates.map(shortDate).join(', ') })}</p>
+                  {changes.workouts.length > 0 ? (
+                    <>
+                      <p className="text-muted mt-0.5">{t('import.changesWorkouts', { n: changes.workouts.length })}</p>
+                      <ul className="mt-1.5 text-xs text-muted list-disc pl-4">
+                        {changes.workouts.map((w) => (
+                          <li key={w.id}>
+                            {shortDate(w.date)} · {workoutName(t, w)}
+                            {w.startTime ? ` · ${w.startTime}` : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  ) : (
+                    <p className="text-muted mt-0.5">{t('import.changesNone')}</p>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="flex flex-col gap-2">
               {rows.map((r, i) => (
                 <div key={i} className={`card p-3 ${r.include ? '' : 'opacity-60'}`}>
@@ -155,6 +201,7 @@ export function ImportPage() {
                   <p className="text-xs text-muted mt-2 truncate">
                     {r.raw && <span className="font-mono">“{r.raw.slice(0, 80)}”</span>}
                     {r.duplicate && !replace && <span className="ml-2 text-warn font-semibold">{t('import.duplicate')}</span>}
+                    {replace && changed.has(r.date) && <span className="ml-2 text-warn font-semibold">{t('import.changed')}</span>}
                     {!r.dutyTypeId && <span className="ml-2 text-warn font-semibold">{t('import.unknownType')}</span>}
                   </p>
                 </div>

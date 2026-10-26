@@ -2,6 +2,10 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.5.0 — 2026-10-26
+- Uploading an updated AIMS roster compares it with the stored one day by day. On days whose duty changed (type, times or route), planned workouts are removed because they were planned around the old duty. Days that didn't change keep their plan, and completed or skipped workouts are always kept.
+- The review screen lists the changed days and the workouts that will be removed before you save, and the confirmation has **Undo**.
+
 ## 1.4.0 — 2026-10-26
 - Flight days: plan workouts freely as long as they don't clash with the duty. When adding a workout on a duty day, the editor shows the duty, flags a clashing start time immediately (duty ± buffer from Training Rules), and offers the free windows as one-tap start times.
 - "Limited" duty types now read as "Outside duty time".

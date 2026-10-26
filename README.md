@@ -60,7 +60,7 @@ docs/                 Deployment and Supabase guides
 
 ### Roster import
 
-**Settings → Duty Calendar & Import → Import roster → Upload AIMS roster (PDF).** Pick the AIMS *Personal Crew Schedule Report* PDF. It is read on the device (works offline, nothing is uploaded): report/sign-off times (bold), every sector with actual or scheduled times, delay lines, overnight duties (`→` / `↓`), deadhead sectors (`*DMK`), ground codes (DM/DH → Standby) and free days (OFF, ROFF, REST, AL). You review the rows, then save. Older duties on those dates are replaced and workouts are never touched. Upload a new PDF whenever the roster changes.
+**Settings → Duty Calendar & Import → Import roster → Upload AIMS roster (PDF).** Pick the AIMS *Personal Crew Schedule Report* PDF. It is read on the device (works offline, nothing is uploaded): report/sign-off times (bold), every sector with actual or scheduled times, delay lines, overnight duties (`→` / `↓`), deadhead sectors (`*DMK`), ground codes (DM/DH → Standby) and free days (OFF, ROFF, REST, AL). You review the rows, then save. Older duties on those dates are replaced. On days whose duty changed, planned workouts are removed (you see the list first and can undo); unchanged days keep their plan, and completed workouts are always kept. Upload a new PDF whenever the roster changes.
 
 ### Training rules (defaults)
 

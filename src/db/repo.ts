@@ -186,9 +186,50 @@ export async function findDuplicateDuties(drafts: DutyDraft[]): Promise<boolean[
  * With `replace`, existing duties starting on the imported dates are removed first, so an
  * updated roster replaces the old entries instead of stacking on top of them.
  */
-export async function importDuties(drafts: DutyDraft[], opts: { replace?: boolean } = {}): Promise<{ added: number; skipped: number; replaced: number }> {
+/** What a day's duties look like, for spotting roster changes (type, times, end date and description). */
+const daySignature = (ds: Pick<Duty, 'dutyTypeId' | 'startTime' | 'endTime' | 'endDate' | 'title'>[]) =>
+  ds
+    .map((d) => [d.dutyTypeId, d.startTime ?? '', d.endTime ?? '', d.endDate ?? '', d.title ?? ''].join('|'))
+    .sort()
+    .join('\n');
+
+export interface RosterChanges {
+  /** Dates that already had duties and whose duties differ in the new roster. */
+  changedDates: ISODate[];
+  /** Planned (not completed or skipped) workouts on those dates. */
+  workouts: Workout[];
+}
+
+/**
+ * Compare an incoming roster with the stored duties. A date counts as changed only when it
+ * already had duties (so a first import never touches workouts) and they differ.
+ */
+export async function rosterChanges(drafts: DutyDraft[]): Promise<RosterChanges> {
+  const dates = [...new Set(drafts.map((d) => d.date))];
+  if (!dates.length) return { changedDates: [], workouts: [] };
+  const old = (await db.duties.where('date').anyOf(dates).toArray()).filter((d) => !d.deleted);
+  const changedDates = dates
+    .filter((date) => {
+      const before = old.filter((d) => d.date === date);
+      return before.length > 0 && daySignature(before) !== daySignature(drafts.filter((d) => d.date === date));
+    })
+    .sort();
+  const workouts = changedDates.length
+    ? (await db.workouts.where('date').anyOf(changedDates).toArray()).filter((w) => !w.deleted && w.status === 'planned')
+    : [];
+  return { changedDates, workouts };
+}
+
+export async function importDuties(
+  drafts: DutyDraft[],
+  opts: { replace?: boolean } = {},
+): Promise<{ added: number; skipped: number; replaced: number; changedDates: ISODate[]; removedWorkoutIds: string[] }> {
   let replaced = 0;
+  let changes: RosterChanges = { changedDates: [], workouts: [] };
   if (opts.replace && drafts.length) {
+    // Planned workouts on days whose duty changed were planned around the old duty: remove them.
+    changes = await rosterChanges(drafts);
+    if (changes.workouts.length) await db.workouts.bulkPut(changes.workouts.map((w) => stamp({ ...w, deleted: true })));
     const dates = [...new Set(drafts.map((d) => d.date))];
     const old = (await db.duties.where('date').anyOf(dates).toArray()).filter((d) => !d.deleted);
     await db.duties.bulkPut(old.map((d) => stamp({ ...d, deleted: true })));
@@ -205,7 +246,7 @@ export async function importDuties(drafts: DutyDraft[], opts: { replace?: boolea
   });
   await db.duties.bulkPut(toAdd);
   emitChange();
-  return { added: toAdd.length, skipped: drafts.length - toAdd.length, replaced };
+  return { added: toAdd.length, skipped: drafts.length - toAdd.length, replaced, changedDates: changes.changedDates, removedWorkoutIds: changes.workouts.map((w) => w.id) };
 }
 
 export async function saveDutyType(t: Omit<DutyType, keyof SyncFields> & Partial<SyncFields>) {
