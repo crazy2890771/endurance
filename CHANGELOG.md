@@ -2,6 +2,9 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.3.2 — 2026-10-26
+- Import roster now offers only **Upload AIMS roster (PDF)**. CSV, ICS, other-PDF and JSON options were removed from the screen. A PDF that isn't an AIMS report gets a clear message.
+
 ## 1.3.1 — 2026-10-26
 - Fix AIMS PDF upload on iPhone Safari ("undefined is not a function"): page text is now read without async stream iteration, and the missing browser features pdf.js needs (stream async iteration, `Promise.withResolvers`) are filled in when absent.
 
