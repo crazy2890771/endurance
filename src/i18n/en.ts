@@ -192,7 +192,7 @@ export const en = {
   'duty.past': 'Past duties',
 
   'dutyType.title': 'Duty Types',
-  'dutyType.hint': 'Choose which duty categories permit training. Standby and flight days are “Limited” by default — the app never assumes you are free.',
+  'dutyType.hint': 'Choose which duty categories permit training. Flight days are “Limited”. Standby (including AIMS DM/DH codes) is “Training OK” because call-outs are rare — change it here any time.',
   'dutyType.add': 'Add custom type',
   'dutyType.code': 'Code',
   'dutyType.label': 'Name',

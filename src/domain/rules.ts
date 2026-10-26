@@ -175,6 +175,8 @@ export function evaluatePlan(input: EvaluateInput): RuleWarning[] {
       if (w.date < from || w.date > to || w.status === 'completed') continue;
       for (const d of dutiesOnDate(input.duties, w.date)) {
         const type = typeById.get(d.dutyTypeId);
+        // "Training OK" duty types (e.g. standby, where call-outs are rare) never raise conflicts.
+        if (type?.allowsTraining === 'yes') continue;
         const label = type?.code ?? '?';
         const win = dutyWindow(d);
         if (win && w.startTime) {

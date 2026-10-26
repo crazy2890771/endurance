@@ -146,6 +146,8 @@ export interface AppSettings {
     lastError?: string;
   };
   deviceId: string;
+  /** One-off data migrations already applied on this device. */
+  migrations?: string[];
   updatedAt: string;
 }
 

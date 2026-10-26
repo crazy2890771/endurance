@@ -159,8 +159,14 @@ describe('duty conflicts', () => {
     expect(run([w('2026-10-23', { startTime: '09:00' })], only('dutyOverlap'), [d])).toHaveLength(0);
   });
 
-  it('does not assume standby is free: limited duty without times gives an info notice', () => {
-    const res = run([w('2026-10-25')], only('dutyOverlap'), [duty('2026-10-25', 'dt-standby')]);
+  it('never warns on duty types marked Training OK, such as standby', () => {
+    const sby = duty('2026-10-26', 'dt-standby', { startTime: '08:00', endTime: '16:00', title: 'DM2' });
+    expect(run([w('2026-10-26', { startTime: '10:00' })], only('dutyOverlap'), [sby])).toHaveLength(0);
+    expect(run([w('2026-10-26')], only('dutyOverlap'), [sby])).toHaveLength(0);
+  });
+
+  it('flags a Limited duty without times with an info notice', () => {
+    const res = run([w('2026-10-25')], only('dutyOverlap'), [duty('2026-10-25', 'dt-flight')]);
     expect(ids(res)).toEqual(['dutyLimited']);
     expect(res[0].severity).toBe('info');
   });

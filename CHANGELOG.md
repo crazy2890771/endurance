@@ -2,6 +2,11 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.2.1 — 2026-10-26
+- AIMS DM1–DM4 codes import as **Standby** (AIMS counts them as standby days), like DH.
+- Standby is "Training OK" by default: call-outs are rare, so workouts on standby days get no conflict warnings. Change it under Settings → Duty Types.
+- Existing data is updated once on launch: standby becomes Training OK unless you changed it yourself, and DM duties imported from AIMS move to Standby.
+
 ## 1.2.0 — 2026-10-26
 - Upload the AIMS Personal Crew Schedule Report PDF straight into KIM. It is read on the device (works offline, no AI): flights with every sector, report/sign-off, delays, overnight duties, deadhead sectors, DM/DH ground duties, OFF/ROFF/REST/AL. Older duties on the same dates are replaced; workouts are untouched.
 - PDF reading uses pdf.js's legacy build so it also runs on iPhone Safari.

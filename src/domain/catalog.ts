@@ -65,7 +65,7 @@ export function isHardSession(w: Pick<Workout, 'activity' | 'type' | 'hrZone' | 
 
 export const BUILTIN_DUTY_TYPES: Omit<DutyType, 'createdAt' | 'updatedAt'>[] = [
   { id: 'dt-flight', code: 'Flight', label: 'Flight', color: '#FF6370', allowsTraining: 'limited', builtin: true, keywords: ['FLT', 'FLIGHT', 'FLY', 'SECTOR'] },
-  { id: 'dt-standby', code: 'Standby', label: 'Standby', color: '#FFB547', allowsTraining: 'limited', builtin: true, keywords: ['SBY', 'STBY', 'STANDBY', 'HSBY', 'ASBY', 'RES'] },
+  { id: 'dt-standby', code: 'Standby', label: 'Standby', color: '#FFB547', allowsTraining: 'yes', builtin: true, keywords: ['SBY', 'STBY', 'STANDBY', 'HSBY', 'ASBY', 'RES'] },
   { id: 'dt-dm', code: 'DM', label: 'Duty / Meeting', color: '#8C9BA6', allowsTraining: 'limited', builtin: true, keywords: ['DM', 'MEETING', 'GROUND', 'SIM', 'TRG', 'OFFICE'] },
   { id: 'dt-al', code: 'AL', label: 'Annual Leave', color: '#55E5A3', allowsTraining: 'yes', builtin: true, keywords: ['AL', 'LEAVE', 'VAC'] },
   { id: 'dt-roff', code: 'ROFF', label: 'Requested Off', color: '#52BFFF', allowsTraining: 'yes', builtin: true, keywords: ['ROFF', 'RDO'] },

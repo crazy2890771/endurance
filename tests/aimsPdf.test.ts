@@ -51,7 +51,7 @@ describe('AIMS Personal Crew Schedule PDF', () => {
     expect(brief(rows)).toEqual([
       '2026-10-01 Flight 08:50 20:04 FD175 DMK–MLE–DMK',
       '2026-10-02 ROFF',
-      '2026-10-03 DM 08:00 16:00 DM2',
+      '2026-10-03 Standby 08:00 16:00 DM2',
       '2026-10-04 Standby 11:00 19:00 DH1',
       '2026-10-05 AL',
     ]);

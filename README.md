@@ -3,7 +3,7 @@
 A mobile-first, offline-capable Progressive Web App for planning running, cycling, swimming and strength training around an irregular airline flight-duty roster.
 
 - **Manual planning, no AI.** You plan every session yourself. The app never generates, recommends or reschedules workouts.
-- **Duty-aware.** You enter or import your roster (CSV, ICS or PDF, always reviewed before saving), and each duty type says whether it allows training (yes, limited or no). Standby and flight days default to *Limited*.
+- **Duty-aware.** You enter or import your roster (CSV, ICS or PDF, always reviewed before saving), and each duty type says whether it allows training (yes, limited or no). Flight days default to *Limited*; standby (incl. AIMS DM/DH codes) defaults to *Training OK*.
 - **Deterministic rule checks.** Configurable rules warn you about back-to-back hard days, short recovery, running streaks, missing rest, conflicts with duties (including overnight duties) and jumps in running volume. Warnings explain themselves and can be overridden. Nothing is changed automatically.
 - **Offline first.** Everything is stored on the device in IndexedDB, and the app shell is precached by a service worker.
 - **Optional cloud sync** through your own Supabase project. Without it the app is fully local and needs no login.

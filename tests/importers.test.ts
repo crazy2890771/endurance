@@ -143,7 +143,7 @@ describe('AIMS roster JSON (ตารางแลกไฟลต์)', () => {
 
   it('maps statuses, flights, standby and ground codes', () => {
     const rows = parseAimsRosterJson(JSON.stringify(oct), types);
-    expect(rows.map((r) => r.dutyTypeId)).toEqual(['dt-flight', 'dt-standby', 'dt-roff', 'dt-dm', 'dt-off', undefined, 'dt-flight', 'dt-off']);
+    expect(rows.map((r) => r.dutyTypeId)).toEqual(['dt-flight', 'dt-standby', 'dt-roff', 'dt-standby', 'dt-off', undefined, 'dt-flight', 'dt-off']);
     expect(rows[0]).toMatchObject({ startTime: '08:50', endTime: '20:04', title: 'FD175 DMK–CNX–DMK', sourceKey: 'aims:2026-10-01' });
     expect(rows[0].notes).toContain('FD176 CNX-DMK 11:45-12:55');
     expect(rows[1].title).toBe('DH3');
@@ -157,7 +157,7 @@ describe('AIMS roster JSON (ตารางแลกไฟลต์)', () => {
   it("lets a month's own document win over another month's spill-over days", () => {
     const nov = month('2026-11', [{ date: '2026-11-01', status: 'DUTY', code: 'DM3', signOn: '11:00', signOff: '19:00', sectors: [] }]);
     const rows = parseAimsRosterJson(JSON.stringify({ months: { 'roster-2026-10': oct, 'roster-2026-11': nov } }), types);
-    expect(rows.find((r) => r.date === '2026-11-01')?.dutyTypeId).toBe('dt-dm');
+    expect(rows.find((r) => r.date === '2026-11-01')?.dutyTypeId).toBe('dt-standby');
     expect(rows.filter((r) => r.date === '2026-11-01')).toHaveLength(1);
   });
 });

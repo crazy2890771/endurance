@@ -358,8 +358,9 @@ export function aimsDutyType(d: AimsDay, types: DutyType[]): string | undefined 
   if (d.status !== 'DUTY') return undefined;
   if (d.sectors?.length) return has('dt-flight') ? 'dt-flight' : undefined;
   const code = (d.code ?? '').toUpperCase();
-  if (/^(DH|SBY|STBY|HSBY|ASBY|RSV|RES)/.test(code)) return has('dt-standby') ? 'dt-standby' : undefined;
-  if (/^(DM|SIM|TRG|GS|BS|CRM|SEP|LINE|CHK)/.test(code)) return has('dt-dm') ? 'dt-dm' : undefined;
+  // AIMS counts DM1–DM4 (airport) and DH (home) as standby days.
+  if (/^(DM|DH|SBY|STBY|HSBY|ASBY|RSV|RES)/.test(code)) return has('dt-standby') ? 'dt-standby' : undefined;
+  if (/^(SIM|TRG|GS|BS|CRM|SEP|LINE|CHK)/.test(code)) return has('dt-dm') ? 'dt-dm' : undefined;
   return matchDutyType(code, types);
 }
 

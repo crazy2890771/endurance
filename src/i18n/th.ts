@@ -194,7 +194,7 @@ export const th: Record<TKey, string> = {
   'duty.past': 'Duty ที่ผ่านมา',
 
   'dutyType.title': 'ประเภท Duty',
-  'dutyType.hint': 'กำหนดว่า Duty ประเภทใดฝึกได้ วัน Standby และวันบินตั้งค่าเป็น “จำกัด” — แอปจะไม่ถือว่าคุณว่างเสมอ',
+  'dutyType.hint': 'กำหนดว่า Duty ประเภทใดฝึกได้ วันบินตั้งเป็น “จำกัด” ส่วน Standby (รวม DM/DH จาก AIMS) ตั้งเป็น “ฝึกได้” เพราะไม่ค่อยถูกเรียก — เปลี่ยนได้ที่นี่ตลอด',
   'dutyType.add': 'เพิ่มประเภทเอง',
   'dutyType.code': 'รหัส',
   'dutyType.label': 'ชื่อ',

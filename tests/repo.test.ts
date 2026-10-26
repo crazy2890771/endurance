@@ -102,6 +102,29 @@ describe('duties', () => {
 });
 
 describe('initialisation, demo and backup', () => {
+  it('migrates older installs: standby becomes Training OK and imported DM duties move to Standby', async () => {
+    const sb = (await db.dutyTypes.get('dt-standby'))!;
+    await db.dutyTypes.put({ ...sb, allowsTraining: 'limited', updatedAt: sb.createdAt });
+    await db.duties.put({ id: 'old-dm', date: '2026-10-26', dutyTypeId: 'dt-dm', title: 'DM2', startTime: '08:00', endTime: '16:00', source: 'aims', createdAt: 'x', updatedAt: 'x' });
+    await db.duties.put({ id: 'manual-dm', date: '2026-10-27', dutyTypeId: 'dt-dm', title: 'Meeting', source: 'manual', createdAt: 'x', updatedAt: 'x' });
+    const s = (await db.settings.get('app'))!;
+    await db.settings.put({ ...s, migrations: [] });
+    await ensureInitialized();
+    expect((await db.dutyTypes.get('dt-standby'))?.allowsTraining).toBe('yes');
+    expect((await db.duties.get('old-dm'))?.dutyTypeId).toBe('dt-standby');
+    expect((await db.duties.get('manual-dm'))?.dutyTypeId).toBe('dt-dm');
+    expect((await db.settings.get('app'))?.migrations).toContain('standby-training-ok');
+  });
+
+  it('keeps a standby setting the user chose themselves', async () => {
+    const sb = (await db.dutyTypes.get('dt-standby'))!;
+    await db.dutyTypes.put({ ...sb, allowsTraining: 'limited', updatedAt: '2099-01-01T00:00:00.000Z' });
+    const s = (await db.settings.get('app'))!;
+    await db.settings.put({ ...s, migrations: [] });
+    await ensureInitialized();
+    expect((await db.dutyTypes.get('dt-standby'))?.allowsTraining).toBe('limited');
+  });
+
   it('seeds settings and built-in duty types once', async () => {
     await ensureInitialized();
     await ensureInitialized();

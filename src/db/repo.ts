@@ -31,10 +31,10 @@ function stamp<T extends Partial<SyncFields>>(rec: T): T & SyncFields {
 // ---------- settings ----------
 
 export async function ensureInitialized(): Promise<AppSettings> {
-  return db.transaction('rw', db.settings, db.dutyTypes, async () => {
+  const settings = await db.transaction('rw', db.settings, db.dutyTypes, async () => {
     let s = await db.settings.get('app');
     if (!s) {
-      s = { ...defaultSettings(), onboarded: true, language: navigator.language?.toLowerCase().startsWith('th') ? 'th' : 'en' };
+      s = { ...defaultSettings(), migrations: [STANDBY_MIGRATION], onboarded: true, language: navigator.language?.toLowerCase().startsWith('th') ? 'th' : 'en' };
       await db.settings.put(s);
     }
     if ((await db.dutyTypes.count()) === 0) {
@@ -42,6 +42,26 @@ export async function ensureInitialized(): Promise<AppSettings> {
       await db.dutyTypes.bulkPut(BUILTIN_DUTY_TYPES.map((t) => ({ ...t, createdAt: ts, updatedAt: ts, dirty: 1 as const })));
     }
     return s;
+  });
+  await migrateStandby(settings);
+  return (await db.settings.get('app')) ?? settings;
+}
+
+const STANDBY_MIGRATION = 'standby-training-ok';
+
+/**
+ * 1.2.1: standby became "Training OK" by default, and AIMS DM codes count as standby.
+ * Moves imported DM duties to Standby; leaves a Standby setting the user changed alone.
+ */
+async function migrateStandby(s: AppSettings) {
+  if (s.migrations?.includes(STANDBY_MIGRATION)) return;
+  await db.transaction('rw', db.settings, db.dutyTypes, db.duties, async () => {
+    const sb = await db.dutyTypes.get('dt-standby');
+    if (sb && sb.allowsTraining === 'limited' && sb.updatedAt === sb.createdAt) await db.dutyTypes.put(stamp({ ...sb, allowsTraining: 'yes' }));
+    const dm = await db.duties.where('dutyTypeId').equals('dt-dm').filter((d) => !d.deleted && d.source === 'aims' && /^DM\d/i.test(d.title ?? '')).toArray();
+    if (dm.length) await db.duties.bulkPut(dm.map((d) => stamp({ ...d, dutyTypeId: 'dt-standby' })));
+    const cur = (await db.settings.get('app')) ?? s;
+    await db.settings.put({ ...cur, migrations: [...(cur.migrations ?? []), STANDBY_MIGRATION] });
   });
 }
 
