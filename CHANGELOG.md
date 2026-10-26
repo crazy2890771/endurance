@@ -2,6 +2,11 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.2.0 — 2026-10-26
+- Upload the AIMS Personal Crew Schedule Report PDF straight into KIM. It is read on the device (works offline, no AI): flights with every sector, report/sign-off, delays, overnight duties, deadhead sectors, DM/DH ground duties, OFF/ROFF/REST/AL. Older duties on the same dates are replaced; workouts are untouched.
+- PDF reading uses pdf.js's legacy build so it also runs on iPhone Safari.
+- Planner says "No workout planned" instead of "Rest day" on duty days without a workout.
+
 ## 1.1.1 — 2026-10-26
 - Version bump to confirm automatic Cloudflare deploys from GitHub pushes.
 

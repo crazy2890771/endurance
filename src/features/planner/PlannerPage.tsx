@@ -265,7 +265,7 @@ function DayRow({
         </div>
         {workouts.length === 0 ? (
           <p className="text-sm text-muted flex items-center gap-2 py-1">
-            <Moon size={14} /> {t('planner.restDay')}
+            <Moon size={14} /> {duties.length ? t('planner.noWorkout') : t('planner.restDay')}
           </p>
         ) : (
           workouts.map((w) => (

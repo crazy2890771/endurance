@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, CalendarDays, FileSpreadsheet, FileText, Download, FileJson, Plane } from 'lucide-react';
+import { AlertTriangle, CalendarDays, FileSpreadsheet, FileText, Download, FileJson, Plane, Upload } from 'lucide-react';
 import { useUI } from '@/app/ui';
 import { EmptyState, PageHeader, Spinner } from '@/components/ui';
 import { useDutyTypes } from '@/db/hooks';
 import { findDuplicateDuties, importDuties, type DutyDraft } from '@/db/repo';
-import { CSV_TEMPLATE, extractPdfLines, parseAimsRosterJson, parseDutyCsv, parseDutyIcs, parseRosterText, type ParsedDuty } from '@/domain/importers';
+import { isAimsRoster, parseAimsRoster } from '@/domain/aimsPdf';
+import { CSV_TEMPLATE, extractPdfItems, pdfItemsToLines, parseAimsRosterJson, parseDutyCsv, parseDutyIcs, parseRosterText, type ParsedDuty } from '@/domain/importers';
 import type { DutySource } from '@/domain/types';
 import { isValidHHmm, isValidISODate } from '@/lib/dates';
 import { downloadFile } from '@/lib/format';
@@ -65,15 +66,19 @@ export function ImportPage() {
     }
   };
 
-  const load = async (src: DutySource, read: () => Promise<ParsedDuty[]>) => {
+  /** `read` may report a different source than requested, e.g. a PDF that turns out to be an AIMS roster. */
+  const load = async (requested: DutySource, read: () => Promise<ParsedDuty[] | { rows: ParsedDuty[]; source: DutySource }>) => {
     if (!types) return;
-    setKind(src);
-    setReplace(src === 'aims');
+    setKind(requested);
     setBusy(true);
     setError(undefined);
     setRows(null);
     try {
-      const parsed = await read();
+      const res = await read();
+      const parsed = Array.isArray(res) ? res : res.rows;
+      const src = Array.isArray(res) ? requested : res.source;
+      setKind(src);
+      setReplace(src === 'aims');
       const drafts = parsed.map((p) => toDraft(p, p.dutyTypeId ?? '', src));
       const dups = await findDuplicateDuties(drafts);
       setRows(parsed.map((p, i) => ({ ...p, duplicate: dups[i], include: (!dups[i] || src === 'aims') && !!p.dutyTypeId })));
@@ -87,7 +92,11 @@ export function ImportPage() {
   const onFile = (file: File | undefined) => {
     if (!file || !types) return;
     void load(kind, async () => {
-      if (kind === 'pdf') return parseRosterText(await extractPdfLines(await file.arrayBuffer()), types);
+      if (kind === 'pdf') {
+        const items = await extractPdfItems(await file.arrayBuffer());
+        if (isAimsRoster(items)) return { rows: parseAimsRoster(items, types), source: 'aims' as const };
+        return parseRosterText(pdfItemsToLines(items), types);
+      }
       if (kind === 'ics') return parseDutyIcs(await file.text(), types);
       if (kind === 'aims') return parseAimsRosterJson(await file.text(), types);
       return parseDutyCsv(await file.text(), types);
@@ -144,6 +153,18 @@ export function ImportPage() {
             </span>
           </button>
         )}
+        <button
+          className="card w-full mb-3 px-4 py-4 flex items-center gap-3 text-left border-mint/50 bg-mint/5 active:scale-[.99] transition"
+          onClick={() => pick('pdf')}
+        >
+          <span className="w-12 h-12 rounded-xl bg-mint/15 text-mint flex items-center justify-center shrink-0">
+            <Upload size={24} />
+          </span>
+          <span className="min-w-0">
+            <span className="block font-bold">{t('import.aimsPdf')}</span>
+            <span className="block text-xs text-muted">{t('import.aimsPdfHint')}</span>
+          </span>
+        </button>
         <div className="flex flex-col gap-2">
           <Choice icon={<FileSpreadsheet size={22} className="text-mint" />} title={t('import.csv')} sub={t('import.csvHint')} onClick={() => pick('csv')} />
           <Choice icon={<CalendarDays size={22} className="text-sky" />} title={t('import.ics')} sub={t('import.icsHint')} onClick={() => pick('ics')} />
@@ -172,6 +193,7 @@ export function ImportPage() {
             <h2 className="text-lg font-bold">{t('import.review')}</h2>
             <p className="text-sm text-muted mb-1">{t('import.reviewHint')}</p>
             {kind === 'pdf' && <p className="text-sm text-warn mb-2">{t('import.pdfNote')}</p>}
+            {kind === 'aims' && <p className="text-sm text-muted mb-2">{t('import.aimsNote')}</p>}
             <p className="text-xs text-muted mb-3">{t('import.rows', { n: rows.length })}</p>
             <label className="card px-3 py-3 mb-3 flex items-start gap-3 cursor-pointer">
               <input type="checkbox" className="w-6 h-6 mt-0.5 accent-[rgb(var(--mint))]" checked={replace} onChange={(e) => setReplace(e.target.checked)} />

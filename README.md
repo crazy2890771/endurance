@@ -60,7 +60,8 @@ docs/                 Deployment and Supabase guides
 
 - **CSV**: a header row with any of `date, duty, start, end, end date, title, notes` (common synonyms are accepted), or no header in the order `date, duty, start, end, notes`. Dates may be `2026-10-21`, `21/10/2026`, `21OCT26` or `21 Oct 2026`; times `0630` or `06:30`. A template can be downloaded from the import screen.
 - **ICS**: standard VEVENTs. UTC times are converted to the device time zone, all-day events become multi-day duties, and the UID is used to detect duplicates.
-- **PDF**: best-effort text extraction with pdf.js. Each text line that starts with a date becomes a candidate row. Airline PDFs vary a lot, so the review step is mandatory.
+- **AIMS PDF** (Personal Crew Schedule Report): read precisely from the report's grid on the device: report/sign-off (bold), sectors, delays, overnight `→`/`↓` duties, `*` deadhead, ground codes and free days. Re-uploading replaces older duties on those dates.
+- **Other PDFs**: best-effort text extraction with pdf.js. Each text line that starts with a date becomes a candidate row. Airline PDFs vary a lot, so the review step is mandatory.
 
 Duty codes are matched to duty types by code and by keywords that you can edit under **Duty Types**. Rows that match nothing stay unticked until you choose a type.
 

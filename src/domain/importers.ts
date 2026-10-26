@@ -283,33 +283,54 @@ export function parseRosterText(lines: string[], types: DutyType[], fallbackYear
   return out;
 }
 
-/** Extract text lines from a PDF using pdf.js (loaded lazily). */
-export async function extractPdfLines(file: ArrayBuffer): Promise<string[]> {
-  const pdfjs = await import('pdfjs-dist');
-  const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
+/** One positioned piece of PDF text; `y` grows downwards from the top of the page. */
+export interface PdfTextItem {
+  page: number;
+  x: number;
+  y: number;
+  str: string;
+  font: string;
+}
+
+/** Extract positioned text from a PDF using pdf.js (loaded lazily). Runs entirely on the device. */
+export async function extractPdfItems(file: ArrayBuffer): Promise<PdfTextItem[]> {
+  // The legacy build carries polyfills that iOS Safari and older browsers need.
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  const worker = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');
   pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
   const doc = await pdfjs.getDocument({ data: file }).promise;
-  const lines: string[] = [];
+  const out: PdfTextItem[] = [];
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
+    const height = page.getViewport({ scale: 1 }).height;
     const content = await page.getTextContent();
-    // Group text items into lines by their y coordinate.
-    const rows = new Map<number, { x: number; s: string }[]>();
     for (const item of content.items) {
       if (!('str' in item) || !item.str.trim()) continue;
-      const y = Math.round(item.transform[5] / 3) * 3;
-      rows.set(y, [...(rows.get(y) ?? []), { x: item.transform[4], s: item.str }]);
+      out.push({ page: p, x: item.transform[4], y: height - item.transform[5], str: item.str.trim(), font: item.fontName });
     }
-    [...rows.entries()]
-      .sort((a, b) => b[0] - a[0])
-      .forEach(([, items]) => lines.push(items.sort((a, b) => a.x - b.x).map((i) => i.s).join(' ')));
   }
-  return lines;
+  return out;
+}
+
+/** Group positioned text into reading-order lines (for the generic roster heuristics). */
+export function pdfItemsToLines(items: PdfTextItem[]): string[] {
+  const rows = new Map<string, PdfTextItem[]>();
+  for (const it of items) {
+    const key = `${it.page}:${Math.round(it.y / 3) * 3}`;
+    rows.set(key, [...(rows.get(key) ?? []), it]);
+  }
+  return [...rows.entries()]
+    .sort(([a], [b]) => {
+      const [pa, ya] = a.split(':').map(Number);
+      const [pb, yb] = b.split(':').map(Number);
+      return pa - pb || ya - yb;
+    })
+    .map(([, row]) => row.sort((a, b) => a.x - b.x).map((i) => i.str).join(' '));
 }
 
 // ---------------- AIMS roster JSON (from the "ตารางแลกไฟลต์" roster app) ----------------
 
-interface AimsSector {
+export interface AimsSector {
   flt?: string;
   from?: string;
   to?: string;
@@ -317,7 +338,7 @@ interface AimsSector {
   arr?: string | null;
 }
 
-interface AimsDay {
+export interface AimsDay {
   date: string;
   status: string;
   code?: string;
@@ -327,10 +348,10 @@ interface AimsDay {
   sectors?: AimsSector[];
 }
 
-const AIMS_STATUS_TYPE: Record<string, string> = { OFF: 'dt-off', OFF_AFTER: 'dt-off', ROFF: 'dt-roff', REST: 'dt-rest', AL: 'dt-al' };
+export const AIMS_STATUS_TYPE: Record<string, string> = { OFF: 'dt-off', OFF_AFTER: 'dt-off', '>OFF': 'dt-off', ROFF: 'dt-roff', REST: 'dt-rest', AL: 'dt-al' };
 
 /** Pick the duty type for one AIMS day: flights by sectors, ground duties by their code prefix. */
-function aimsDutyType(d: AimsDay, types: DutyType[]): string | undefined {
+export function aimsDutyType(d: AimsDay, types: DutyType[]): string | undefined {
   const has = (id: string) => types.some((t) => t.id === id);
   const byStatus = AIMS_STATUS_TYPE[d.status];
   if (byStatus) return has(byStatus) ? byStatus : undefined;
@@ -343,7 +364,7 @@ function aimsDutyType(d: AimsDay, types: DutyType[]): string | undefined {
 }
 
 /** Human label for a flight day, e.g. "FD3402 DMK–URT–DMK". */
-function aimsRoute(sectors: AimsSector[]): string {
+export function aimsRoute(sectors: AimsSector[]): string {
   const stops: string[] = [];
   for (const s of sectors) {
     if (s.from && stops[stops.length - 1] !== s.from) stops.push(s.from);
