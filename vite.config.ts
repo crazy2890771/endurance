@@ -67,6 +67,8 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,mjs}'],
         maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
         navigateFallback: '/index.html',
+        // API calls and the Strava sign-in redirects must reach the Worker, not the cached app shell.
+        navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],

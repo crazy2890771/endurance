@@ -34,6 +34,8 @@ export interface WorkoutResult {
   avgPace?: string;
   rpe?: number;
   notes?: string;
+  /** Strava activity this result came from (prevents importing it twice). */
+  stravaId?: number;
   completedAt: string;
 }
 
@@ -152,6 +154,8 @@ export interface AppSettings {
   deviceId: string;
   /** Monthly backup reminder: when a backup was last saved, and until when "Later" hides it. */
   backup?: { lastAt?: string; snoozeUntil?: string };
+  /** Strava link: `token` is the Worker-encrypted Strava token, unreadable on the device. */
+  strava?: { token: string; athlete?: string; connectedAt: string; lastSyncAt?: string };
   /** The "add to Home Screen" card was closed. */
   installHintDismissed?: boolean;
   /** One-off data migrations already applied on this device. */

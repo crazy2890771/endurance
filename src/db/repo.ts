@@ -174,6 +174,43 @@ export async function copyWeek(fromStart: ISODate, toStart: ISODate): Promise<st
   return ids;
 }
 
+/**
+ * Saves the chosen Strava activities: matched ones complete their planned workout (keeping an RPE
+ * already entered), the others become new completed workouts. Returns the ids of each, for undo.
+ */
+export async function importStravaResults(
+  items: { workoutId?: string; date: ISODate; startTime?: string; activity: Workout['activity']; type: Workout['type']; result: Omit<WorkoutResult, 'completedAt'> }[],
+): Promise<{ completed: string[]; created: string[] }> {
+  const completed: string[] = [];
+  const created: string[] = [];
+  await db.transaction('rw', db.workouts, async () => {
+    for (const it of items) {
+      const completedAt = nowIso();
+      const existing = it.workoutId ? await db.workouts.get(it.workoutId) : undefined;
+      if (existing) {
+        await db.workouts.put(stamp({ ...existing, status: 'completed', result: { ...it.result, rpe: existing.result?.rpe, completedAt } }));
+        completed.push(existing.id);
+      } else {
+        const rec = stamp<Workout>({
+          date: it.date,
+          startTime: it.startTime,
+          activity: it.activity,
+          type: it.type,
+          durationMin: it.result.durationMin ?? 0,
+          distanceKm: it.result.distanceKm,
+          status: 'completed',
+          order: await nextOrder(it.date),
+          result: { ...it.result, completedAt },
+        } as Workout);
+        await db.workouts.put(rec);
+        created.push(rec.id);
+      }
+    }
+  });
+  emitChange();
+  return { completed, created };
+}
+
 /** Swap a workout with its neighbour inside the same day. */
 export async function reorderWorkout(id: string, dir: -1 | 1) {
   const w = await db.workouts.get(id);

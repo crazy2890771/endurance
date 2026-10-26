@@ -1,4 +1,5 @@
-import { CalendarClock, Heart, Info, ListChecks, Plane, SlidersHorizontal } from 'lucide-react';
+import { Activity, CalendarClock, Heart, Info, ListChecks, Plane, SlidersHorizontal } from 'lucide-react';
+import { useSettingsOrDefault } from '@/db/hooks';
 import { ListLink, PageHeader } from '@/components/ui';
 import { Logo } from '@/components/Logo';
 import { useI18n } from '@/i18n';
@@ -22,6 +23,7 @@ export function SyncChip() {
 
 export function SettingsPage() {
   const { t, fmt } = useI18n();
+  const { strava } = useSettingsOrDefault();
   return (
     <div className="pb-28">
       <PageHeader
@@ -34,6 +36,12 @@ export function SettingsPage() {
           <ListLink to="/settings/duty-types" icon={<CalendarClock size={20} />} title={t('settings.dutyTypes')} sub={t('settings.dutyTypes.sub')} />
           <ListLink to="/settings/rules" icon={<ListChecks size={20} />} title={t('settings.rules')} sub={t('settings.rules.sub')} />
           <ListLink to="/settings/zones" icon={<Heart size={20} />} title={t('settings.zones')} sub={t('settings.zones.sub')} />
+          <ListLink
+            to="/settings/strava"
+            icon={<Activity size={20} />}
+            title="Strava"
+            sub={strava ? t('strava.connectedAs', { name: strava.athlete || 'Strava' }) : t('strava.sub')}
+          />
           <ListLink to="/settings/general" icon={<SlidersHorizontal size={20} />} title={t('settings.general')} sub={t('settings.general.sub')} />
         </nav>
 

@@ -1,7 +1,9 @@
-// Cloudflare Workers config: serve the built PWA from dist/ as static assets.
+// Cloudflare Workers config: serve the built PWA from dist/ as static assets, plus a small API.
 // Used by Workers Builds (Git-connected Worker) and `npx wrangler deploy`.
 {
   "name": "endurance",
+  // Strava API under /api/strava (needs STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET secrets); everything else is static.
+  "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
   "workers_dev": true,
   "preview_urls": true,
@@ -10,6 +12,8 @@
   },
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"],
     // Deep links such as /planner return index.html; the app router takes it from there.
     "not_found_handling": "single-page-application"
   }

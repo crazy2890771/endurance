@@ -2,6 +2,10 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.12.0 — 2026-10-26
+- **Strava connection** (Settings → Strava) to bring in results from Garmin: pull recent activities, review how each maps onto the plan (completes the planned workout of the same kind that day, or adds a new completed workout), then save. Time, distance, average HR and pace are filled in; RPE stays yours. Undo, and no activity is imported twice.
+- The Cloudflare Worker now has a small API (`/api/strava`) for the Strava sign-in. The client secret stays in Cloudflare and the app only holds an encrypted token. Setup: [docs/STRAVA.md](docs/STRAVA.md).
+
 ## 1.11.0 — 2026-10-26
 - **Tap a free window to plan.** On duty days the week view (and the month day detail) shows free windows as buttons; tapping one opens Add Workout on that day with the start time filled in.
 - **Copy last week's plan** button under the week view: copies every workout of the previous week to the same weekdays as planned workouts (results not copied), with Undo. Nothing is moved: clashes with the new roster show up as warnings.

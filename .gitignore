@@ -11,3 +11,4 @@ coverage
 test-results
 *.tsbuildinfo
 .wrangler
+.dev.vars

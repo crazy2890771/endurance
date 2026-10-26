@@ -85,6 +85,10 @@ If a workout or its duty has no times, a *Limited* duty raises an information no
 - The service worker precaches the whole app, including the PDF worker, so it opens and works with no network. A banner shows when you are offline, and an *Update* prompt appears when a new version is deployed.
 - **Cloud sync is optional.** See [docs/SUPABASE.md](docs/SUPABASE.md). Until you configure it, the Sync screen says **Not configured**. The app never pretends to sync.
 
+## Strava
+
+Results from a Garmin (or any watch) via Strava: **Settings → Strava**. The Cloudflare Worker in `worker/` handles sign-in and keeps the client secret; see [docs/STRAVA.md](docs/STRAVA.md) for setup.
+
 ## Deployment
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for GitHub + Cloudflare Pages.

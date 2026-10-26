@@ -12,6 +12,7 @@ import { HomePage } from '@/features/home/HomePage';
 import { PlannerPage } from '@/features/planner/PlannerPage';
 import { HistoryPage } from '@/features/history/HistoryPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
+import { StravaPage } from '@/features/settings/StravaPage';
 import { DataPage, GeneralPage, RulesPage, TemplatesPage, ZonesPage } from '@/features/settings/pages';
 import { SyncPage } from '@/features/settings/SyncPage';
 import { PlanCheckPage } from '@/features/plancheck/PlanCheckPage';
@@ -107,6 +108,7 @@ function Shell() {
           <Route path="/settings/zones" element={<ZonesPage />} />
           <Route path="/settings/templates" element={<TemplatesPage />} />
           <Route path="/settings/general" element={<GeneralPage />} />
+          <Route path="/settings/strava" element={<StravaPage />} />
           <Route path="/settings/data" element={<DataPage />} />
           <Route path="/settings/sync" element={<SyncPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
