@@ -2,6 +2,9 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.2.2 — 2026-10-26
+- Splash screen shortened from 3 to 1.5 seconds.
+
 ## 1.2.1 — 2026-10-26
 - AIMS DM1–DM4 codes import as **Standby** (AIMS counts them as standby days), like DH.
 - Standby is "Training OK" by default: call-outs are rare, so workouts on standby days get no conflict warnings. Change it under Settings → Duty Types.
