@@ -72,6 +72,7 @@ docs/                 Deployment and Supabase guides
 | Rest days per week | min 1 |
 | Duty conflict buffer before and after a timed duty | 60 min |
 | Rest after a duty that ends past midnight (next day shows as OFF) | 8 h |
+| Gap between a hard session and a report before 08:00 (also: no hard session the day after an overnight duty) | 10 h |
 | Weekly running-distance increase (only when the previous week is at least 10 km) | max +10% |
 | Long run / interval / tempo per week (Sun–Sat), each counted separately | max 1 of each |
 

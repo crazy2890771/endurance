@@ -1,12 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, Clock, Moon, Plane, Plus, X } from 'lucide-react';
+import { CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, Clock, Copy, Moon, Plane, Plus, X } from 'lucide-react';
 import { useUI } from '@/app/ui';
 import { Segmented } from '@/components/ui';
 import { DutyBadge, WorkoutCard } from '@/components/cards';
 import { ACTIVITY_BAR } from '@/components/icons';
 import { useDuties, useDutyTypes, useSettingsOrDefault, useWorkouts } from '@/db/hooks';
-import { moveWorkout } from '@/db/repo';
+import { copyWeek, deleteWorkout, moveWorkout } from '@/db/repo';
 import { dayAvailability, dutiesShownOn, dutyEndDate, effectiveDistanceKm, restAfterOvernight, type Availability } from '@/domain/rules';
 import type { Duty, DutyType, ISODate, Workout } from '@/domain/types';
 import { addDaysISO, formatMin, fromISODate, isValidISODate, monthBounds, monthGrid, todayISO, weekDays } from '@/lib/dates';
@@ -36,7 +36,7 @@ export function PlannerPage() {
   const view: View = sp.get('view') === 'month' ? 'month' : 'week';
   const settings = useSettingsOrDefault();
   const { t, fmt } = useI18n();
-  const { open, moving, setMoving, toast } = useUI();
+  const { open, moving, setMoving, toast, confirm } = useUI();
   const [selected, setSelected] = useState<ISODate>(anchor);
 
   const days = useMemo(() => (view === 'week' ? weekDays(anchor, settings.weekStartsOn) : monthGrid(anchor, settings.weekStartsOn)), [anchor, view, settings.weekStartsOn]);
@@ -73,6 +73,14 @@ export function PlannerPage() {
       const next = new Date(d.getFullYear(), d.getMonth() + dir, 1);
       go(`${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-01`);
     }
+  };
+
+  const copyLastWeek = async () => {
+    const planned = (workouts ?? []).length;
+    if (planned && !(await confirm(t('planner.copyConfirm', { n: planned }), { confirmLabel: t('planner.copyLastWeek') }))) return;
+    const ids = await copyWeek(addDaysISO(from, -7), from);
+    if (!ids.length) return toast(t('planner.copyNone'), { tone: 'warn' });
+    toast(t('planner.copied', { n: ids.length }), { action: { label: t('common.undo'), run: () => void Promise.all(ids.map(deleteWorkout)) } });
   };
 
   // Swipe between weeks / months.
@@ -160,6 +168,11 @@ export function PlannerPage() {
               ))}
             </div>
             <WeekTotals workouts={workouts ?? []} />
+            {!moving && (
+              <button className="btn-ghost w-full mt-2 text-sm" onClick={copyLastWeek}>
+                <Copy size={18} /> {t('planner.copyLastWeek')}
+              </button>
+            )}
           </>
         ) : (
           <MonthView
@@ -285,16 +298,14 @@ function DayRow({
         </div>
         {workouts.length === 0 ? (
           free.level === 'partial' || free.level === 'busy' ? (
-            <p className={`text-sm flex items-center gap-2 py-1 ${free.level === 'busy' ? 'text-danger' : 'text-amber-400'}`}>
-              <Clock size={14} className="shrink-0" />
-              <span className="tabular-nums">
-                {free.windows.length
-                  ? t('planner.freeWindows', { windows: free.windows.map((w) => `${formatMin(w.start)}–${formatMin(w.end)}`).join(' · ') })
-                  : free.level === 'busy'
-                    ? t('planner.noFreeTime')
-                    : t('planner.freeUnknown')}
-              </span>
-            </p>
+            free.windows.length ? (
+              <FreeWindowChips date={date} windows={free.windows} disabled={moving} />
+            ) : (
+              <p className={`text-sm flex items-center gap-2 py-1 ${free.level === 'busy' ? 'text-danger' : 'text-amber-400'}`}>
+                <Clock size={14} className="shrink-0" />
+                {free.level === 'busy' ? t('planner.noFreeTime') : t('planner.freeUnknown')}
+              </p>
+            )
           ) : (
             <p className="text-sm text-muted flex items-center gap-2 py-1">
               <Moon size={14} /> {free.level === 'free' ? t('planner.freeAllDay') : duties.length ? t('planner.noWorkout') : t('planner.restDay')}
@@ -409,6 +420,30 @@ function MonthView({
   );
 }
 
+/** Free windows on a duty day; tapping one adds a workout starting then. */
+function FreeWindowChips({ date, windows, disabled }: { date: ISODate; windows: { start: number; end: number }[]; disabled?: boolean }) {
+  const { t } = useI18n();
+  const { open } = useUI();
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <span className="text-xs text-amber-400 flex items-center gap-1">
+        <Clock size={13} /> {t('planner.free')}
+      </span>
+      {windows.map((w) => (
+        <button
+          key={w.start}
+          disabled={disabled}
+          className="chip min-h-[32px] px-2.5 text-xs tabular-nums bg-amber-400/10 text-amber-400 gap-1"
+          aria-label={t('planner.addAt', { time: formatMin(w.start) })}
+          onClick={() => open({ kind: 'workoutEditor', date, startTime: formatMin(w.start) })}
+        >
+          <Plus size={12} /> {formatMin(w.start)}–{formatMin(w.end)}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function DayDetail({ date, workouts, duties, restUntil, free, typeById, warned, units, t }: { date: ISODate; workouts: Workout[]; duties: Duty[]; restUntil?: string; free: DayFree; typeById: Map<string, DutyType>; warned: Set<string>; units: 'metric' | 'imperial'; t: ReturnType<typeof useI18n>['t'] }) {
   const { fmt } = useI18n();
   const { open } = useUI();
@@ -436,13 +471,17 @@ function DayDetail({ date, workouts, duties, restUntil, free, typeById, warned, 
           </button>
         ))}
         {restUntil && <p className="card px-3 py-2.5 text-sm text-sky">{t('planner.trainAfter', { time: restUntil })}</p>}
-        {free.level !== 'unknown' && (
-          <p className={`card px-3 py-2.5 text-sm tabular-nums flex items-center gap-2 ${free.level === 'free' ? 'text-mint' : free.level === 'busy' ? 'text-danger' : 'text-amber-400'}`}>
-            <Clock size={14} className="shrink-0" />
-            {free.windows.length
-              ? t('planner.freeWindows', { windows: free.windows.map((w) => `${formatMin(w.start)}–${formatMin(w.end)}`).join(' · ') })
-              : t(free.level === 'free' ? 'planner.freeAllDay' : free.level === 'busy' ? 'planner.noFreeTime' : 'planner.freeUnknown')}
-          </p>
+        {free.windows.length > 0 ? (
+          <div className="card px-3 py-2.5">
+            <FreeWindowChips date={date} windows={free.windows} />
+          </div>
+        ) : (
+          free.level !== 'unknown' && (
+            <p className={`card px-3 py-2.5 text-sm flex items-center gap-2 ${free.level === 'free' ? 'text-mint' : free.level === 'busy' ? 'text-danger' : 'text-amber-400'}`}>
+              <Clock size={14} className="shrink-0" />
+              {t(free.level === 'free' ? 'planner.freeAllDay' : free.level === 'busy' ? 'planner.noFreeTime' : 'planner.freeUnknown')}
+            </p>
+          )
         )}
         {workouts.map((w) => (
           <WorkoutCard key={w.id} w={w} units={units} warning={warned.has(w.id)} onClick={() => open({ kind: 'workoutDetail', id: w.id })} />

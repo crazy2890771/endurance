@@ -53,6 +53,7 @@ const RULE_ROWS: { key: keyof RuleConfig; field: string; unit: TKey; min: number
   { key: 'dutyOverlap', field: 'bufferMin', unit: 'rules.unit.min', min: 0, max: 720, step: 30 },
   { key: 'runVolume', field: 'maxIncreasePct', unit: 'rules.unit.pct', min: 5, max: 100, step: 5 },
   { key: 'keySessionsPerWeek', field: 'max', unit: 'rules.unit.count', min: 1, max: 4, step: 1 },
+  { key: 'hardNearDuty', field: 'minHours', unit: 'rules.unit.hours', min: 4, max: 16, step: 1 },
 ];
 
 export function RulesPage() {

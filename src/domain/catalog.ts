@@ -81,6 +81,7 @@ export const DEFAULT_RULES: RuleConfig = {
   dutyOverlap: { enabled: true, bufferMin: 60, overnightRestMin: 480 },
   runVolume: { enabled: true, maxIncreasePct: 10, minBaseKm: 10 },
   keySessionsPerWeek: { enabled: true, max: 1 },
+  hardNearDuty: { enabled: true, minHours: 10 },
 };
 
 export function defaultHrZones(maxHr = 185): AppSettings['hrZones'] {

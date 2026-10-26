@@ -9,6 +9,7 @@ import type {
   WorkoutResult,
   WorkoutTemplate,
 } from '@/domain/types';
+import { addDaysISO } from '@/lib/dates';
 import { db } from './db';
 
 export const nowIso = () => new Date().toISOString();
@@ -148,6 +149,29 @@ export async function duplicateWorkout(id: string, date?: ISODate) {
   await db.workouts.put(copy);
   emitChange();
   return copy;
+}
+
+/**
+ * Copy every workout of the week starting `fromStart` to the same weekday 7 days later, as planned
+ * workouts without results. Returns the new ids (for undo). Clashes with the new roster are left
+ * to the plan check: nothing is moved automatically.
+ */
+export async function copyWeek(fromStart: ISODate, toStart: ISODate): Promise<string[]> {
+  const src = (await db.workouts.where('date').between(fromStart, addDaysISO(fromStart, 6), true, true).toArray())
+    .filter((w) => !w.deleted)
+    .sort((a, b) => a.date.localeCompare(b.date) || a.order - b.order);
+  const shift = Math.round((Date.parse(toStart) - Date.parse(fromStart)) / 86_400_000);
+  const ids: string[] = [];
+  await db.transaction('rw', db.workouts, async () => {
+    for (const w of src) {
+      const date = addDaysISO(w.date, shift);
+      const copy = stamp<Workout>({ ...w, id: newId(), createdAt: undefined as unknown as string, date, status: 'planned', result: undefined, order: await nextOrder(date) });
+      await db.workouts.put(copy);
+      ids.push(copy.id);
+    }
+  });
+  emitChange();
+  return ids;
 }
 
 /** Swap a workout with its neighbour inside the same day. */

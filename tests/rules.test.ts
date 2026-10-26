@@ -324,3 +324,25 @@ describe('day availability', () => {
     expect(next).toEqual({ level: 'partial', windows: [{ start: 9 * 60 + 12, end: 23 * 60 }] });
   });
 });
+
+describe('hard sessions near duty', () => {
+  const early = duty('2026-10-22', 'dt-flight', { startTime: '05:30', endTime: '14:45' });
+  it('warns when a hard session ends less than 10 h before an early report', () => {
+    const res = run([w('2026-10-21', { type: 'interval', startTime: '19:00', durationMin: 60 })], only('hardNearDuty'), [early]);
+    expect(ids(res)).toEqual(['hardBeforeDuty']);
+    expect(res[0].params).toMatchObject({ report: '05:30', hours: 9.5, min: 10 });
+  });
+  it('is fine with enough gap, easy sessions, late reports and Training OK duties', () => {
+    expect(run([w('2026-10-21', { type: 'interval', startTime: '18:00', durationMin: 60 })], only('hardNearDuty'), [early])).toHaveLength(0);
+    expect(run([w('2026-10-21', { type: 'easy', startTime: '21:00' })], only('hardNearDuty'), [early])).toHaveLength(0);
+    const late = duty('2026-10-22', 'dt-flight', { startTime: '15:20', endTime: '23:00' });
+    expect(run([w('2026-10-22', { type: 'tempo', startTime: '07:00' })], only('hardNearDuty'), [late])).toHaveLength(0);
+    const sby = duty('2026-10-22', 'dt-standby', { startTime: '05:00', endTime: '13:00' });
+    expect(run([w('2026-10-21', { type: 'interval', startTime: '20:00' })], only('hardNearDuty'), [sby])).toHaveLength(0);
+  });
+  it('warns on a hard session the day after an overnight duty', () => {
+    const night = duty('2026-10-21', 'dt-flight', { startTime: '15:20', endTime: '01:12' });
+    expect(ids(run([w('2026-10-22', { type: 'long', startTime: '16:00', durationMin: 100 })], only('hardNearDuty'), [night]))).toEqual(['hardAfterOvernight']);
+    expect(run([w('2026-10-22', { type: 'easy', startTime: '16:00' })], only('hardNearDuty'), [night])).toHaveLength(0);
+  });
+});

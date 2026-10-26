@@ -117,6 +117,8 @@ export interface RuleConfig {
   runVolume: { enabled: boolean; maxIncreasePct: number; minBaseKm: number };
   /** Max long runs, interval sessions and tempo sessions per week — each counted separately. */
   keySessionsPerWeek: { enabled: boolean; max: number };
+  /** Hard sessions: at least minHours before an early report (before 08:00), and not the day after an overnight duty. */
+  hardNearDuty: { enabled: boolean; minHours: number };
 }
 
 export interface HRZoneRange {

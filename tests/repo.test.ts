@@ -4,6 +4,7 @@ import { db } from '@/db/db';
 import {
   clearAllData,
   completeWorkout,
+  copyWeek,
   deleteDutyType,
   deleteWorkout,
   duplicateWorkout,
@@ -55,6 +56,23 @@ describe('workout CRUD', () => {
     expect(copy.id).not.toBe(w.id);
     await moveWorkout(w.id, '2026-10-22');
     expect((await db.workouts.get(w.id))).toMatchObject({ date: '2026-10-22', status: 'completed' });
+  });
+
+  it('copies last week to this week as planned workouts, leaving the source alone', async () => {
+    const a = await saveWorkout(draft({ date: '2026-10-18', startTime: '06:00' }));
+    await completeWorkout(a.id, { durationMin: 50 });
+    await saveWorkout(draft({ date: '2026-10-21', type: 'interval' }));
+    await saveWorkout(draft({ date: '2026-10-25' })); // next week: not copied
+    const ids = await copyWeek('2026-10-18', '2026-10-25');
+    expect(ids).toHaveLength(2);
+    const copies = await db.workouts.bulkGet(ids);
+    expect(copies.map((w) => [w!.date, w!.type, w!.status, w!.result, w!.startTime])).toEqual([
+      ['2026-10-25', 'easy', 'planned', undefined, '06:00'],
+      ['2026-10-28', 'interval', 'planned', undefined, undefined],
+    ]);
+    expect(copies[0]!.order).toBe(1); // after the workout already on the 25th
+    expect((await db.workouts.get(a.id))!.status).toBe('completed');
+    expect(await copyWeek('2026-11-01', '2026-11-08')).toEqual([]);
   });
 
   it('records results and skips', async () => {

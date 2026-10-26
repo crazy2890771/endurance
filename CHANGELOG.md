@@ -2,6 +2,13 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.11.0 — 2026-10-26
+- **Tap a free window to plan.** On duty days the week view (and the month day detail) shows free windows as buttons; tapping one opens Add Workout on that day with the start time filled in.
+- **Copy last week's plan** button under the week view: copies every workout of the previous week to the same weekdays as planned workouts (results not copied), with Undo. Nothing is moved: clashes with the new roster show up as warnings.
+- New training rule **Hard sessions near duty** (default 10 h): warns when an interval, tempo, long run, Zone 4–5 or lower/full-body strength session ends less than 10 h before a report earlier than 08:00, and when a hard session is planned the day after an overnight duty. Adjustable or off under Training Rules.
+- Record Result explains the RPE scale under the 1–10 buttons.
+- Home shows this week's free time (05:00–23:00 outside duty) and training done / planned; the running distance row only appears when runs have a distance.
+
 ## 1.10.0 — 2026-10-26
 - **Monthly backup reminder** on Home once you have workouts: "Back up now" saves a backup file (on iPhone through the share sheet → Save to Files / iCloud Drive), "Later" hides it for a week. It comes back 30 days after the last backup.
 - **Add to Home Screen** card on Home until the app is installed or the card is closed (one-tap Install on Android/Chrome).

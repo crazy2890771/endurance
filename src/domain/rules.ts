@@ -20,7 +20,9 @@ export type RuleId =
   | 'runVolume'
   | 'longRunPerWeek'
   | 'intervalPerWeek'
-  | 'tempoPerWeek';
+  | 'tempoPerWeek'
+  | 'hardBeforeDuty'
+  | 'hardAfterOvernight';
 
 export interface RuleWarning {
   key: string;
@@ -48,6 +50,9 @@ const fmtClock = (epochMin: number) => {
   const d = new Date(epochMin * 60000);
   return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
+
+/** A report before this time counts as an early start for the hard-session rule. */
+export const EARLY_REPORT = '08:00';
 
 /** Default time assumed for comparisons when a workout has no start time. */
 const DEFAULT_START = '12:00';
@@ -315,6 +320,29 @@ export function evaluatePlan(input: EvaluateInput): RuleWarning[] {
         } else if (type?.allowsTraining === 'limited') {
           out.push(warn('dutyLimited', 'info', [w.date], [w.id], { duty: label, times: d.startTime && d.endTime ? `${d.startTime}–${d.endTime}` : '—' }, [d.id]));
         }
+      }
+    }
+  }
+
+  // 5b. Hard sessions close to duty: before an early report, or the day after an overnight duty
+  if (rules.hardNearDuty?.enabled) {
+    const gap = rules.hardNearDuty.minHours * 60;
+    for (const w of workouts) {
+      if (w.date < from || w.date > to || w.status === 'completed' || !isHardSession(w)) continue;
+      const we = toEpochMin(w.date, w.startTime ?? DEFAULT_START) + w.durationMin;
+      const near = input.duties.filter((d) => !d.deleted && (d.date === w.date || d.date === addDaysISO(w.date, 1)));
+      for (const d of near) {
+        const type = typeById.get(d.dutyTypeId);
+        if (!type || type.allowsTraining === 'yes' || !d.startTime || d.startTime >= EARLY_REPORT) continue;
+        const report = toEpochMin(d.date, d.startTime);
+        if (report > we && report - we < gap) {
+          out.push(warn('hardBeforeDuty', 'warning', [w.date], [w.id], { duty: type.code, report: d.startTime, hours: Math.round((report - we) / 6) / 10, min: rules.hardNearDuty.minHours }, [d.id]));
+        }
+      }
+      for (const d of dutiesOnDate(input.duties, w.date)) {
+        const type = typeById.get(d.dutyTypeId);
+        if (!type || type.allowsTraining === 'yes' || !spillsInto(d, w.date)) continue;
+        out.push(warn('hardAfterOvernight', 'warning', [w.date], [w.id], { duty: type.code, end: d.endTime! }, [d.id]));
       }
     }
   }

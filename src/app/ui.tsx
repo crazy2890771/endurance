@@ -6,7 +6,7 @@ import { Sheet } from '@/components/Sheet';
 
 export type SheetState =
   | { kind: 'none' }
-  | { kind: 'workoutEditor'; id?: string; date?: ISODate; template?: WorkoutTemplate }
+  | { kind: 'workoutEditor'; id?: string; date?: ISODate; startTime?: string; template?: WorkoutTemplate }
   | { kind: 'workoutDetail'; id: string }
   | { kind: 'complete'; id: string }
   | { kind: 'dutyEditor'; id?: string; date?: ISODate };

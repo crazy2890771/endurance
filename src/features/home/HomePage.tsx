@@ -7,7 +7,7 @@ import { DutyBadge, WorkoutCard, workoutName } from '@/components/cards';
 import { ACTIVITY_BG, ACTIVITY_ICON, ACTIVITY_TEXT, ActivityBadge } from '@/components/icons';
 import { useDuties, useDutyTypes, useSettingsOrDefault, useWorkouts } from '@/db/hooks';
 import { TRAINING_ACTIVITIES } from '@/domain/catalog';
-import { dutiesShownOn, effectiveDistanceKm, restAfterOvernight } from '@/domain/rules';
+import { dayAvailability, dutiesShownOn, effectiveDistanceKm, restAfterOvernight } from '@/domain/rules';
 import { addDaysISO, formatMin, fromISODate, todayISO, weekDays } from '@/lib/dates';
 import { formatDistance, formatDuration, formatKm } from '@/lib/format';
 import { useI18n } from '@/i18n';
@@ -22,7 +22,7 @@ export function HomePage() {
   const { open } = useUI();
   const week = weekDays(today, settings.weekStartsOn);
   const workouts = useWorkouts(week[0], addDaysISO(today, 7) > week[6] ? addDaysISO(today, 7) : week[6]);
-  const duties = useDuties(today, addDaysISO(today, 7));
+  const duties = useDuties(week[0], addDaysISO(today, 7) > week[6] ? addDaysISO(today, 7) : week[6]);
   const dutyTypes = useDutyTypes();
   const warnings = usePlanWarnings(week[0], week[6], settings);
   const typeById = new Map((dutyTypes ?? []).map((d) => [d.id, d]));
@@ -38,6 +38,14 @@ export function HomePage() {
   const doneKm = (a: string) => done.filter((w) => w.activity === a).reduce((s, w) => s + effectiveDistanceKm(w), 0);
   const upcoming = (workouts ?? []).filter((w) => w.date > today && w.date <= addDaysISO(today, 7) && w.status === 'planned').slice(0, 5);
   const issues = warnings?.active.length ?? 0;
+  // Free training time this week (05:00–23:00 outside duty), against what's planned and done.
+  const freeMin = week.reduce((s, d) => {
+    const a = dayAvailability(d, duties ?? [], dutyTypes ?? [], settings.rules.dutyOverlap);
+    return s + (a.level === 'free' ? 18 * 60 : a.windows.reduce((m, w) => m + w.end - w.start, 0));
+  }, 0);
+  const rostered = week.some((d) => dayAvailability(d, duties ?? [], dutyTypes ?? [], settings.rules.dutyOverlap).level !== 'unknown');
+  const plannedMin = weekW.filter((w) => w.status !== 'skipped').reduce((s, w) => s + w.durationMin, 0);
+  const doneMin = done.reduce((s, w) => s + (w.result?.durationMin ?? w.durationMin), 0);
 
   return (
     <div className="px-4 pb-28">
@@ -160,11 +168,27 @@ export function HomePage() {
           );
         })}
       </div>
-      <div className="card p-4 mt-2 flex items-center justify-between">
-        <span className="text-sm text-muted">{t('home.running')}</span>
-        <span className="font-bold">
-          {formatKm(doneKm('run'), settings.units)} <span className="text-muted font-normal">/ {formatKm(sumKm('run'), settings.units)}</span>
-        </span>
+      <div className="card p-4 mt-2 flex flex-col gap-3">
+        {rostered && (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-muted">{t('home.freeTime')}</span>
+            <span className="font-bold text-mint tabular-nums">{formatDuration(freeMin)}</span>
+          </div>
+        )}
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm text-muted">{t('home.trainingTime')}</span>
+          <span className="font-bold tabular-nums">
+            {formatDuration(doneMin)} <span className="text-muted font-normal">/ {formatDuration(plannedMin)}</span>
+          </span>
+        </div>
+        {sumKm('run') > 0 && (
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-sm text-muted">{t('home.running')}</span>
+            <span className="font-bold tabular-nums">
+              {formatKm(doneKm('run'), settings.units)} <span className="text-muted font-normal">/ {formatKm(sumKm('run'), settings.units)}</span>
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Upcoming */}

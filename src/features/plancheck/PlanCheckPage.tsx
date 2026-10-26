@@ -16,6 +16,7 @@ const RULE_TO_IDS: Record<keyof RuleConfig, string[]> = {
   dutyOverlap: ['dutyOverlap', 'dutyNoTraining', 'dutyLimited', 'dutyRest'],
   runVolume: ['runVolume'],
   keySessionsPerWeek: ['longRunPerWeek', 'intervalPerWeek', 'tempoPerWeek'],
+  hardNearDuty: ['hardBeforeDuty', 'hardAfterOvernight'],
 };
 
 export function PlanCheckPage() {

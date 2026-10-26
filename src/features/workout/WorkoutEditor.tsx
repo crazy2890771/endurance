@@ -43,8 +43,8 @@ const LOC_ICON: Record<Location, React.ReactNode> = {
   openwater: <Mountain size={18} />,
 };
 
-function initial(date?: string): FormState {
-  return { activity: 'run', type: 'easy', location: 'outdoor', date: date ?? todayISO(), startTime: '', durationMin: 45, distance: '', hrZone: 2, target: '', notes: '', intervals: [] };
+function initial(date?: string, startTime = ''): FormState {
+  return { activity: 'run', type: 'easy', location: 'outdoor', date: date ?? todayISO(), startTime, durationMin: 45, distance: '', hrZone: 2, target: '', notes: '', intervals: [] };
 }
 
 function fromSource(src: Workout | WorkoutTemplate, units: 'metric' | 'imperial', date?: string): FormState {
@@ -94,10 +94,10 @@ export function WorkoutEditor() {
       setStep(3);
     } else {
       setExisting(undefined);
-      setF(initial(params.date));
+      setF(initial(params.date, params.startTime));
       setStep(1);
     }
-  }, [isOpen, params?.id, params?.date, params?.template]);
+  }, [isOpen, params?.id, params?.date, params?.startTime, params?.template]);
 
   const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setF((s) => ({ ...s, [k]: v }));
 

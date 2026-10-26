@@ -105,6 +105,7 @@ export function CompleteSheet() {
             </button>
           ))}
         </div>
+        <p className="text-xs text-muted mt-2 leading-relaxed">{t('complete.rpeGuide')}</p>
       </Field>
       <Field label={t('complete.notes')} htmlFor="c-notes">
         <textarea id="c-notes" rows={3} className="input py-3" value={notes} onChange={(e) => setNotes(e.target.value)} />
