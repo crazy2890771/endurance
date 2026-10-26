@@ -5,7 +5,7 @@
  * Every warning carries a stable `key` so the user can acknowledge (override) it.
  */
 import { addDaysISO, dateRange, toEpochMin, weekStart } from '@/lib/dates';
-import { isHardSession, isHighIntensity } from './catalog';
+import { DEFAULT_RULES, isHardSession, isHighIntensity } from './catalog';
 import type { Duty, DutyType, ISODate, RuleConfig, Workout } from './types';
 
 export type RuleId =
@@ -17,7 +17,9 @@ export type RuleId =
   | 'dutyNoTraining'
   | 'dutyLimited'
   | 'runVolume'
-  | 'longRunPerWeek';
+  | 'longRunPerWeek'
+  | 'intervalPerWeek'
+  | 'tempoPerWeek';
 
 export interface RuleWarning {
   key: string;
@@ -136,7 +138,9 @@ export function freeWindows(blocks: DutyBlock[], minLen: number, from = 5 * 60, 
 }
 
 export function evaluatePlan(input: EvaluateInput): RuleWarning[] {
-  const { rules, from, to } = input;
+  const { from, to } = input;
+  // Fill in rules added after the user's settings were saved.
+  const rules: RuleConfig = { ...DEFAULT_RULES, ...input.rules };
   const wso = input.weekStartsOn ?? 1;
   // Look back far enough to see streaks and the previous week's volume.
   const lookFrom = addDaysISO(weekStart(from, wso), -14);
@@ -259,12 +263,19 @@ export function evaluatePlan(input: EvaluateInput): RuleWarning[] {
     }
   }
 
-  // 7. Long runs per week
-  if (rules.longRunPerWeek.enabled) {
+  // 7. Key sessions per week: long runs, intervals and tempo sessions, each limited on its own.
+  if (rules.keySessionsPerWeek.enabled) {
+    const max = rules.keySessionsPerWeek.max;
+    const kinds: [RuleId, (w: Workout) => boolean][] = [
+      ['longRunPerWeek', (w) => w.activity === 'run' && w.type === 'long'],
+      ['intervalPerWeek', (w) => w.type === 'interval'],
+      ['tempoPerWeek', (w) => w.type === 'tempo'],
+    ];
     for (const ws of weeks) {
-      const longs = workouts.filter((w) => w.activity === 'run' && w.type === 'long' && w.date >= ws && w.date <= addDaysISO(ws, 6));
-      if (longs.length > rules.longRunPerWeek.max) {
-        out.push(warn('longRunPerWeek', 'warning', longs.map((w) => w.date), longs.map((w) => w.id), { count: longs.length, max: rules.longRunPerWeek.max }));
+      const inWeek = workouts.filter((w) => w.date >= ws && w.date <= addDaysISO(ws, 6));
+      for (const [id, is] of kinds) {
+        const hits = inWeek.filter(is);
+        if (hits.length > max) out.push(warn(id, 'warning', hits.map((w) => w.date), hits.map((w) => w.id), { count: hits.length, max }));
       }
     }
   }

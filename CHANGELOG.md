@@ -2,6 +2,10 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.6.0 — 2026-10-26
+- Weeks now run **Sunday–Saturday** (existing installs switch once; change it under Settings → Units, Language & Theme).
+- New weekly limit: at most **1 long run, 1 interval and 1 tempo** per week, each counted on its own (any activity for interval/tempo). It replaces the old long-runs-per-week rule and can be adjusted under Training Rules.
+
 ## 1.5.0 — 2026-10-26
 - Uploading an updated AIMS roster compares it with the stored one day by day. On days whose duty changed (type, times or route), planned workouts are removed because they were planned around the old duty. Days that didn't change keep their plan, and completed or skipped workouts are always kept.
 - The review screen lists the changed days and the workouts that will be removed before you save, and the confirmation has **Undo**.

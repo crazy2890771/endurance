@@ -146,6 +146,20 @@ describe('initialisation, demo and backup', () => {
     expect((await db.settings.get('app'))?.migrations).toContain('standby-training-ok');
   });
 
+  it('fills in rules added later and starts the week on Sunday once', async () => {
+    const s = (await db.settings.get('app'))!;
+    const { keySessionsPerWeek: _k, ...oldRules } = s.rules;
+    await db.settings.put({ ...s, rules: oldRules as typeof s.rules, weekStartsOn: 1, migrations: ['standby-training-ok'] });
+    await ensureInitialized();
+    const after = (await db.settings.get('app'))!;
+    expect(after.rules.keySessionsPerWeek).toEqual({ enabled: true, max: 1 });
+    expect(after.weekStartsOn).toBe(0);
+    // A later change back to Monday is respected.
+    await db.settings.put({ ...after, weekStartsOn: 1 });
+    await ensureInitialized();
+    expect((await db.settings.get('app'))!.weekStartsOn).toBe(1);
+  });
+
   it('keeps a standby setting the user chose themselves', async () => {
     const sb = (await db.dutyTypes.get('dt-standby'))!;
     await db.dutyTypes.put({ ...sb, allowsTraining: 'limited', updatedAt: '2099-01-01T00:00:00.000Z' });

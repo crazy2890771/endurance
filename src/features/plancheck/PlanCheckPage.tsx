@@ -15,7 +15,7 @@ const RULE_TO_IDS: Record<keyof RuleConfig, string[]> = {
   weeklyRest: ['weeklyRest'],
   dutyOverlap: ['dutyOverlap', 'dutyNoTraining', 'dutyLimited'],
   runVolume: ['runVolume'],
-  longRunPerWeek: ['longRunPerWeek'],
+  keySessionsPerWeek: ['longRunPerWeek', 'intervalPerWeek', 'tempoPerWeek'],
 };
 
 export function PlanCheckPage() {

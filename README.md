@@ -72,7 +72,7 @@ docs/                 Deployment and Supabase guides
 | Rest days per week | min 1 |
 | Duty conflict buffer before and after a timed duty | 60 min |
 | Weekly running-distance increase (only when the previous week is at least 10 km) | max +10% |
-| Long runs per week | max 1 |
+| Long run / interval / tempo per week (Sun–Sat), each counted separately | max 1 of each |
 
 If a workout or its duty has no times, a *Limited* duty raises an information notice, and a *No training* duty raises a warning. The engine is a pure function (`src/domain/rules.ts`) covered by `tests/rules.test.ts`.
 

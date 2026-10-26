@@ -114,7 +114,8 @@ export interface RuleConfig {
   weeklyRest: { enabled: boolean; minDays: number };
   dutyOverlap: { enabled: boolean; bufferMin: number };
   runVolume: { enabled: boolean; maxIncreasePct: number; minBaseKm: number };
-  longRunPerWeek: { enabled: boolean; max: number };
+  /** Max long runs, interval sessions and tempo sessions per week — each counted separately. */
+  keySessionsPerWeek: { enabled: boolean; max: number };
 }
 
 export interface HRZoneRange {

@@ -80,7 +80,7 @@ export const DEFAULT_RULES: RuleConfig = {
   weeklyRest: { enabled: true, minDays: 1 },
   dutyOverlap: { enabled: true, bufferMin: 60 },
   runVolume: { enabled: true, maxIncreasePct: 10, minBaseKm: 10 },
-  longRunPerWeek: { enabled: true, max: 1 },
+  keySessionsPerWeek: { enabled: true, max: 1 },
 };
 
 export function defaultHrZones(maxHr = 185): AppSettings['hrZones'] {
@@ -101,7 +101,7 @@ export function defaultSettings(): AppSettings {
     units: 'metric',
     language: 'en',
     theme: 'dark',
-    weekStartsOn: 1,
+    weekStartsOn: 0,
     maxHr: undefined,
     hrZones: defaultHrZones(),
     rules: structuredClone(DEFAULT_RULES),

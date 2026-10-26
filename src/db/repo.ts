@@ -1,4 +1,4 @@
-import { BUILTIN_DUTY_TYPES, defaultSettings } from '@/domain/catalog';
+import { BUILTIN_DUTY_TYPES, DEFAULT_RULES, defaultSettings } from '@/domain/catalog';
 import type {
   AppSettings,
   Duty,
@@ -34,7 +34,7 @@ export async function ensureInitialized(): Promise<AppSettings> {
   const settings = await db.transaction('rw', db.settings, db.dutyTypes, async () => {
     let s = await db.settings.get('app');
     if (!s) {
-      s = { ...defaultSettings(), migrations: [STANDBY_MIGRATION], onboarded: true, language: navigator.language?.toLowerCase().startsWith('th') ? 'th' : 'en' };
+      s = { ...defaultSettings(), migrations: [STANDBY_MIGRATION, SUNDAY_WEEK_MIGRATION], onboarded: true, language: navigator.language?.toLowerCase().startsWith('th') ? 'th' : 'en' };
       await db.settings.put(s);
     }
     if ((await db.dutyTypes.count()) === 0) {
@@ -44,10 +44,26 @@ export async function ensureInitialized(): Promise<AppSettings> {
     return s;
   });
   await migrateStandby(settings);
+  await migrateSettings();
   return (await db.settings.get('app')) ?? settings;
 }
 
 const STANDBY_MIGRATION = 'standby-training-ok';
+const SUNDAY_WEEK_MIGRATION = 'week-starts-sunday';
+
+/** Keep stored settings compatible: add rules introduced later, and (once) start the week on Sunday. */
+async function migrateSettings() {
+  const s = await db.settings.get('app');
+  if (!s) return;
+  const rules = { ...DEFAULT_RULES, ...s.rules };
+  const sunday = !s.migrations?.includes(SUNDAY_WEEK_MIGRATION);
+  if (!sunday && Object.keys(rules).length === Object.keys(s.rules).length) return;
+  await db.settings.put({
+    ...s,
+    rules,
+    ...(sunday ? { weekStartsOn: 0 as const, migrations: [...(s.migrations ?? []), SUNDAY_WEEK_MIGRATION] } : {}),
+  });
+}
 
 /**
  * 1.2.1: standby became "Training OK" by default, and AIMS DM codes count as standby.

@@ -212,8 +212,28 @@ describe('running volume increase', () => {
 
 describe('long runs per week', () => {
   it('warns on two long runs in one week', () => {
-    const res = run([w('2026-10-20', { type: 'long' }), w('2026-10-25', { type: 'long' })], only('longRunPerWeek'));
+    const res = run([w('2026-10-20', { type: 'long' }), w('2026-10-25', { type: 'long' })], only('keySessionsPerWeek'));
     expect(ids(res)).toEqual(['longRunPerWeek']);
+  });
+
+  it('allows one interval, one tempo and one long run in the same week', () => {
+    const ws = [w('2026-10-19', { type: 'interval' }), w('2026-10-21', { type: 'tempo' }), w('2026-10-24', { type: 'long' })];
+    expect(run(ws, only('keySessionsPerWeek'))).toHaveLength(0);
+  });
+
+  it('warns on a second interval or tempo in a week, whatever the activity', () => {
+    const res = run([w('2026-10-20', { type: 'interval' }), w('2026-10-23', { activity: 'cycle', type: 'interval' }), w('2026-10-21', { type: 'tempo' }), w('2026-10-24', { type: 'tempo' })], only('keySessionsPerWeek'));
+    expect(ids(res).sort()).toEqual(['intervalPerWeek', 'tempoPerWeek']);
+    expect(res.find((x) => x.ruleId === 'intervalPerWeek')?.params.count).toBe(2);
+  });
+
+  it('uses Sunday–Saturday weeks when the week starts on Sunday', () => {
+    // Sat 24 Oct and Sun 25 Oct fall in different Sunday-first weeks.
+    const ws = [w('2026-10-24', { type: 'interval' }), w('2026-10-25', { type: 'interval' })];
+    const sundayWeeks = evaluatePlan({ workouts: ws, duties: [], dutyTypes: types, rules: only('keySessionsPerWeek'), from: '2026-10-18', to: '2026-10-31', weekStartsOn: 0 });
+    expect(sundayWeeks).toHaveLength(0);
+    // Monday-first, both are in the week of 19–25 Oct.
+    expect(run(ws, only('keySessionsPerWeek'))).toHaveLength(1);
   });
 });
 
