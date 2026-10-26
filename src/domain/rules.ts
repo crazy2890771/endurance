@@ -94,6 +94,47 @@ export function dutiesOnDate(duties: Duty[], date: ISODate): Duty[] {
   return duties.filter((d) => !d.deleted && d.date <= date && dutyEndDate(d) >= date);
 }
 
+/** A busy stretch of one day, in minutes from 00:00 (buffer included, clipped to the day). */
+export interface DutyBlock {
+  start: number;
+  end: number;
+  duty: Duty;
+}
+
+/**
+ * Busy blocks on `date` from duties that restrict training. "Training OK" types never block;
+ * a "No training" duty without times blocks the whole day; a "Limited" one without times can't be placed.
+ */
+export function dutyBlocksOn(date: ISODate, duties: Duty[], dutyTypes: DutyType[], bufferMin: number): DutyBlock[] {
+  const day0 = toEpochMin(date, '00:00');
+  return dutiesOnDate(duties, date).flatMap((d) => {
+    const type = dutyTypes.find((t) => t.id === d.dutyTypeId);
+    if (!type || type.allowsTraining === 'yes') return [];
+    const win = dutyWindow(d);
+    if (!win) return type.allowsTraining === 'no' ? [{ start: 0, end: 1440, duty: d }] : [];
+    const start = Math.max(0, win[0] - bufferMin - day0);
+    const end = Math.min(1440, win[1] + bufferMin - day0);
+    return end > start ? [{ start, end, duty: d }] : [];
+  });
+}
+
+/** Blocks that a workout starting at `startMin` for `durationMin` would run into. */
+export const clashingBlocks = (blocks: DutyBlock[], startMin: number, durationMin: number) =>
+  blocks.filter((b) => startMin < b.end && startMin + durationMin > b.start);
+
+/** Gaps of at least `minLen` minutes between busy blocks, within sensible training hours (default 05:00–23:00). */
+export function freeWindows(blocks: DutyBlock[], minLen: number, from = 5 * 60, to = 23 * 60): { start: number; end: number }[] {
+  const out: { start: number; end: number }[] = [];
+  let cursor = from;
+  for (const b of [...blocks].sort((a, c) => a.start - c.start)) {
+    if (b.start - cursor >= minLen) out.push({ start: cursor, end: Math.min(b.start, to) });
+    cursor = Math.max(cursor, b.end);
+    if (cursor >= to) break;
+  }
+  if (to - cursor >= minLen) out.push({ start: cursor, end: to });
+  return out.filter((w) => w.end - w.start >= minLen);
+}
+
 export function evaluatePlan(input: EvaluateInput): RuleWarning[] {
   const { rules, from, to } = input;
   const wso = input.weekStartsOn ?? 1;
@@ -190,7 +231,7 @@ export function evaluatePlan(input: EvaluateInput): RuleWarning[] {
         if (type?.allowsTraining === 'no') {
           out.push(warn('dutyNoTraining', 'warning', [w.date], [w.id], { duty: label }, [d.id]));
         } else if (type?.allowsTraining === 'limited') {
-          out.push(warn('dutyLimited', 'info', [w.date], [w.id], { duty: label }, [d.id]));
+          out.push(warn('dutyLimited', 'info', [w.date], [w.id], { duty: label, times: d.startTime && d.endTime ? `${d.startTime}–${d.endTime}` : '—' }, [d.id]));
         }
       }
     }

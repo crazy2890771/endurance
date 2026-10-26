@@ -46,6 +46,9 @@ export const monthBounds = (s: ISODate): [ISODate, ISODate] => {
   return [toISODate(startOfMonth(d)), toISODate(endOfMonth(d))];
 };
 
+/** Minutes since 00:00 → "HH:mm" (1440 shows as 24:00). */
+export const formatMin = (m: number): HHmm => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+
 export const parseHHmm = (t: HHmm): number => {
   const [h, m] = t.split(':').map(Number);
   return h * 60 + (m || 0);

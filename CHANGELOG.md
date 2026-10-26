@@ -2,6 +2,10 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.4.0 — 2026-10-26
+- Flight days: plan workouts freely as long as they don't clash with the duty. When adding a workout on a duty day, the editor shows the duty, flags a clashing start time immediately (duty ± buffer from Training Rules), and offers the free windows as one-tap start times.
+- "Limited" duty types now read as "Outside duty time".
+
 ## 1.3.3 — 2026-10-26
 - Version and commit now show at the top of Settings and at the bottom of Home, in addition to the splash and Settings → About.
 

@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, BookmarkPlus, Building2, Plus, Sun, Trash2, Waves, Mountain } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, BookmarkPlus, Building2, CheckCircle2, Plus, Sun, Trash2, Waves, Mountain } from 'lucide-react';
 import { useUI } from '@/app/ui';
 import { ChipGroup, Field, Stepper } from '@/components/ui';
 import { Sheet } from '@/components/Sheet';
 import { ACTIVITY_ICON, ACTIVITY_TEXT } from '@/components/icons';
 import { workoutName } from '@/components/cards';
 import { db } from '@/db/db';
-import { useSettingsOrDefault, useTemplates } from '@/db/hooks';
+import { useDuties, useDutyTypes, useSettingsOrDefault, useTemplates } from '@/db/hooks';
 import { saveTemplate, saveWorkout, type WorkoutDraft } from '@/db/repo';
 import {
   ACTIVITIES,
@@ -16,7 +16,9 @@ import {
   supportsIntervals,
 } from '@/domain/catalog';
 import type { Activity, HRZone, IntervalSet, Location, Workout, WorkoutTemplate, WorkoutType } from '@/domain/types';
-import { isValidHHmm, isValidISODate, todayISO } from '@/lib/dates';
+import { formatMin, isValidHHmm, isValidISODate, parseHHmm, todayISO } from '@/lib/dates';
+import { clashingBlocks, dutiesOnDate, dutyBlocksOn, freeWindows } from '@/domain/rules';
+import { DutyBadge } from '@/components/cards';
 import { distanceUnitLabel, inputToKm, kmToInput } from '@/lib/format';
 import { useI18n } from '@/i18n';
 
@@ -305,6 +307,7 @@ export function WorkoutEditor() {
               <Field label={t('wizard.duration')} error={errors.duration}>
                 <Stepper label={t('wizard.duration')} value={f.durationMin} onChange={(v) => set('durationMin', v)} step={5} min={5} suffix={t('common.min')} />
               </Field>
+              <DutyFit date={f.date} startTime={f.startTime} durationMin={f.durationMin} onPick={(time) => set('startTime', time)} />
               {hasDistance && (
                 <Field label={<>{t('wizard.distance')} <span className="text-muted font-normal">({t('common.optional')})</span></>} error={errors.distance} htmlFor="w-dist">
                   <div className="relative">
@@ -378,5 +381,67 @@ function IntervalsEditor({ value, onChange, error }: { value: IntervalSet[]; onC
         </button>
       </div>
     </Field>
+  );
+}
+
+/** On a duty day: shows the duty, whether the chosen time clashes with it, and the free windows to pick from. */
+function DutyFit({ date, startTime, durationMin, onPick }: { date: string; startTime: string; durationMin: number; onPick: (time: string) => void }) {
+  const { t } = useI18n();
+  const settings = useSettingsOrDefault();
+  const day = isValidISODate(date) ? date : todayISO();
+  const duties = useDuties(day, day);
+  const types = useDutyTypes();
+  if (!isValidISODate(date) || !duties || !types) return null;
+  const typeById = new Map(types.map((x) => [x.id, x]));
+  const relevant = dutiesOnDate(duties, date).filter((d) => {
+    const a = typeById.get(d.dutyTypeId)?.allowsTraining;
+    return a && a !== 'yes';
+  });
+  if (!relevant.length) return null;
+
+  const buffer = settings.rules.dutyOverlap.bufferMin;
+  const blocks = dutyBlocksOn(date, duties, types, buffer);
+  const untimed = relevant.some((d) => !d.startTime || !d.endTime);
+  const start = isValidHHmm(startTime) ? parseHHmm(startTime) : null;
+  const clash = start !== null ? clashingBlocks(blocks, start, durationMin)[0] : undefined;
+  const windows = freeWindows(blocks, Math.max(durationMin, 15));
+
+  return (
+    <div className={`card p-3 mb-4 ${clash ? 'border-danger/50' : ''}`}>
+      <p className="text-xs text-muted mb-2">{t('wizard.dutyToday')}</p>
+      <div className="flex flex-col gap-1.5 mb-2">
+        {relevant.map((d) => (
+          <div key={d.id} className="flex items-center gap-2 text-sm">
+            <DutyBadge duty={d} type={typeById.get(d.dutyTypeId)} size="sm" />
+            <span className="tabular-nums whitespace-nowrap">{d.startTime && d.endTime ? `${d.startTime}–${d.endTime}` : '—'}</span>
+            {d.title && <span className="text-muted truncate min-w-0">{d.title}</span>}
+          </div>
+        ))}
+      </div>
+      {clash ? (
+        <p className="text-sm text-danger flex items-start gap-1.5" role="alert">
+          <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+          {t('wizard.clash', { duty: typeById.get(clash.duty.dutyTypeId)?.code ?? '', start: clash.duty.startTime ?? '', end: clash.duty.endTime ?? '', buffer })}
+        </p>
+      ) : start !== null && !untimed ? (
+        <p className="text-sm text-mint flex items-center gap-1.5">
+          <CheckCircle2 size={16} /> {t('wizard.noClash')}
+        </p>
+      ) : (
+        <p className="text-sm text-muted">{untimed ? t('wizard.dutyNoTimes') : t('wizard.pickTime')}</p>
+      )}
+      {!untimed && (
+        <div className="mt-3">
+          <p className="text-xs text-muted mb-1.5">{windows.length ? t('wizard.freeWindows') : t('wizard.noWindow')}</p>
+          <div className="flex flex-wrap gap-2">
+            {windows.map((w) => (
+              <button key={w.start} type="button" className="chip min-h-[36px] text-xs tabular-nums bg-mint/10 text-mint" onClick={() => onPick(formatMin(w.start))}>
+                {formatMin(w.start)}–{formatMin(w.end)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

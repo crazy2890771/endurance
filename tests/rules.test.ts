@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BUILTIN_DUTY_TYPES, DEFAULT_RULES } from '@/domain/catalog';
-import { dutyEndDate, dutiesOnDate, evaluatePlan, type RuleId } from '@/domain/rules';
+import { clashingBlocks, dutyBlocksOn, dutyEndDate, dutiesOnDate, evaluatePlan, freeWindows, type RuleId } from '@/domain/rules';
 import type { Duty, DutyType, RuleConfig, Workout } from '@/domain/types';
 
 const ts = '2026-01-01T00:00:00.000Z';
@@ -231,5 +231,31 @@ describe('warning keys and determinism', () => {
   it('only returns warnings inside the requested range', () => {
     const res = run([w('2026-10-27', { type: 'interval' }), w('2026-10-28', { type: 'long' })], only('consecutiveHard'));
     expect(res).toHaveLength(0);
+  });
+});
+
+describe('flight-day free windows', () => {
+  const flight = duty('2026-10-12', 'dt-flight', { startTime: '14:25', endTime: '22:49' });
+
+  it('blocks the duty plus buffer and leaves the morning free', () => {
+    const blocks = dutyBlocksOn('2026-10-12', [flight], types, 60);
+    expect(blocks.map((b) => [b.start, b.end])).toEqual([[13 * 60 + 25, 23 * 60 + 49]]);
+    expect(freeWindows(blocks, 45)).toEqual([{ start: 300, end: 13 * 60 + 25 }]);
+    expect(clashingBlocks(blocks, 12 * 60 + 30, 45)).toHaveLength(0); // 12:30–13:15 fits
+    expect(clashingBlocks(blocks, 12 * 60 + 45, 45)).toHaveLength(1); // runs into the buffer
+  });
+
+  it('clips an overnight duty to the morning of the next day', () => {
+    const night = duty('2026-10-13', 'dt-flight', { startTime: '20:15', endTime: '00:31' });
+    const blocks = dutyBlocksOn('2026-10-14', [night], types, 60);
+    expect(blocks.map((b) => [b.start, b.end])).toEqual([[0, 91]]);
+    expect(freeWindows(blocks, 60)[0]).toEqual({ start: 300, end: 23 * 60 });
+  });
+
+  it('ignores Training OK duties and blocks a whole No-training day without times', () => {
+    expect(dutyBlocksOn('2026-10-26', [duty('2026-10-26', 'dt-standby', { startTime: '08:00', endTime: '16:00' })], types, 60)).toEqual([]);
+    const sim = { ...types[0], id: 'dt-sim', code: 'SIM', allowsTraining: 'no' as const };
+    const blocks = dutyBlocksOn('2026-10-27', [duty('2026-10-27', 'dt-sim')], [...types, sim], 60);
+    expect(freeWindows(blocks, 30)).toEqual([]);
   });
 });

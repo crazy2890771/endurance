@@ -70,7 +70,7 @@ export const th: Record<TKey, string> = {
   'status.skipped': 'ข้าม',
 
   'allow.yes': 'ฝึกได้',
-  'allow.limited': 'จำกัด',
+  'allow.limited': 'นอกเวลา duty',
   'allow.no': 'ห้ามฝึก',
 
 
@@ -129,6 +129,13 @@ export const th: Record<TKey, string> = {
   'wizard.workDist': 'ระยะ (ม.)',
   'wizard.workTime': 'เวลา (วิ)',
   'wizard.recovery': 'พัก (วิ)',
+  'wizard.dutyToday': 'Duty วันนี้',
+  'wizard.clash': 'ชนกับ {duty} {start}–{end} (รวมเผื่อเวลา {buffer} นาที)',
+  'wizard.noClash': 'ไม่ชนกับเวลา duty',
+  'wizard.pickTime': 'ใส่เวลาเริ่ม เพื่อเช็คว่าชนกับ duty ไหม',
+  'wizard.freeWindows': 'ช่วงว่าง — แตะเพื่อเลือก',
+  'wizard.noWindow': 'ไม่มีช่วงว่างนานพอสำหรับระยะเวลานี้',
+  'wizard.dutyNoTimes': 'ยังไม่มีเวลาของ duty จึงเช็คการชนไม่ได้',
   'wizard.saveTemplate': 'บันทึกเป็นเทมเพลต',
   'wizard.templateName': 'ชื่อเทมเพลต',
   'wizard.templateSaved': 'บันทึกเทมเพลตแล้ว',
@@ -194,7 +201,7 @@ export const th: Record<TKey, string> = {
   'duty.past': 'Duty ที่ผ่านมา',
 
   'dutyType.title': 'ประเภท Duty',
-  'dutyType.hint': 'กำหนดว่า Duty ประเภทใดฝึกได้ วันบินตั้งเป็น “จำกัด” ส่วน Standby (รวม DM/DH จาก AIMS) ตั้งเป็น “ฝึกได้” เพราะไม่ค่อยถูกเรียก — เปลี่ยนได้ที่นี่ตลอด',
+  'dutyType.hint': 'กำหนดว่า Duty ประเภทใดฝึกได้ วันบินฝึกได้นอกเวลา duty (รวมเวลาเผื่อในหน้ากฎการฝึก) ส่วน Standby (รวม DM/DH จาก AIMS) ตั้งเป็น “ฝึกได้” เพราะไม่ค่อยถูกเรียก',
   'dutyType.add': 'เพิ่มประเภทเอง',
   'dutyType.code': 'รหัส',
   'dutyType.label': 'ชื่อ',
@@ -260,8 +267,8 @@ export const th: Record<TKey, string> = {
   'warn.dutyOverlap.why': 'Duty {start}–{end} รวมเวลากันชน {buffer} นาที ชนกับเวลาการฝึกนี้',
   'warn.dutyNoTraining': 'วางแผนในวัน {duty}',
   'warn.dutyNoTraining.why': 'คุณตั้ง {duty} เป็นประเภทที่ห้ามฝึก',
-  'warn.dutyLimited': 'ตรวจสอบเวลาว่างในวัน {duty}',
-  'warn.dutyLimited.why': '{duty} ฝึกได้แบบจำกัด ใส่เวลาเริ่มของการฝึกและเวลาของ Duty เพื่อตรวจการชนกัน',
+  'warn.dutyLimited': 'ใส่เวลาฝึกในวัน {duty}',
+  'warn.dutyLimited.why': 'วัน {duty} ฝึกได้ ถ้าไม่ชนกับเวลา duty ({times}) ใส่เวลาเริ่มของการฝึกเพื่อให้แอปเช็คให้',
   'warn.runVolume': 'ระยะวิ่งเพิ่ม {pct}%',
   'warn.runVolume.why': '{prev} กม. → {cur} กม. คุณตั้งไว้ไม่เกิน +{max}% ต่อสัปดาห์',
   'warn.longRunPerWeek': 'วิ่งยาว {count} ครั้งในสัปดาห์นี้',

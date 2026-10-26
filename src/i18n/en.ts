@@ -68,7 +68,7 @@ export const en = {
   'status.skipped': 'Skipped',
 
   'allow.yes': 'Training OK',
-  'allow.limited': 'Limited',
+  'allow.limited': 'Outside duty time',
   'allow.no': 'No training',
 
 
@@ -127,6 +127,13 @@ export const en = {
   'wizard.workDist': 'Distance (m)',
   'wizard.workTime': 'Time (s)',
   'wizard.recovery': 'Recovery (s)',
+  'wizard.dutyToday': 'Duty on this day',
+  'wizard.clash': 'Clashes with {duty} {start}–{end} (incl. {buffer}-min buffer)',
+  'wizard.noClash': 'Clear of duty time',
+  'wizard.pickTime': 'Add a start time to check for clashes',
+  'wizard.freeWindows': 'Free windows — tap to use',
+  'wizard.noWindow': 'No free window long enough for this duration',
+  'wizard.dutyNoTimes': 'Duty times not entered, so clashes can’t be checked',
   'wizard.saveTemplate': 'Save as Template',
   'wizard.templateName': 'Template name',
   'wizard.templateSaved': 'Template saved',
@@ -192,7 +199,7 @@ export const en = {
   'duty.past': 'Past duties',
 
   'dutyType.title': 'Duty Types',
-  'dutyType.hint': 'Choose which duty categories permit training. Flight days are “Limited”. Standby (including AIMS DM/DH codes) is “Training OK” because call-outs are rare — change it here any time.',
+  'dutyType.hint': 'Choose which duty categories permit training. Flight days: train any time outside the duty (plus the buffer under Training Rules). Standby (incl. AIMS DM/DH) is “Training OK” because call-outs are rare.',
   'dutyType.add': 'Add custom type',
   'dutyType.code': 'Code',
   'dutyType.label': 'Name',
@@ -258,8 +265,8 @@ export const en = {
   'warn.dutyOverlap.why': 'Duty {start}–{end} plus a {buffer}-minute buffer overlaps this workout’s time.',
   'warn.dutyNoTraining': 'Planned on a {duty} day',
   'warn.dutyNoTraining.why': 'You marked {duty} as a no-training duty type.',
-  'warn.dutyLimited': 'Check availability on {duty}',
-  'warn.dutyLimited.why': '{duty} only allows limited training. Add a start time to this workout and duty times to check for overlap.',
+  'warn.dutyLimited': 'Set a time on your {duty} day',
+  'warn.dutyLimited.why': 'Training is fine on {duty} days as long as it doesn’t clash with the duty ({times}). Add a start time so the app can check.',
   'warn.runVolume': 'Running volume +{pct}%',
   'warn.runVolume.why': '{prev} km → {cur} km. Your limit is +{max}% per week.',
   'warn.longRunPerWeek': '{count} long runs this week',
