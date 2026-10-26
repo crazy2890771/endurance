@@ -1,4 +1,4 @@
-import { Component, useEffect, useState, type ReactNode } from 'react';
+import { Component, useCallback, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, MemoryRouter, NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { CalendarDays, History, House, Settings, WifiOff } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
@@ -18,7 +18,7 @@ import { PlanCheckPage } from '@/features/plancheck/PlanCheckPage';
 import { DutiesPage } from '@/features/duty/DutiesPage';
 import { ImportPage } from '@/features/duty/ImportPage';
 import { DutyTypesPage } from '@/features/duty/DutyTypesPage';
-import { WelcomePage } from '@/features/welcome/WelcomePage';
+import { SplashScreen } from '@/features/welcome/SplashScreen';
 import { WorkoutEditor } from '@/features/workout/WorkoutEditor';
 import { WorkoutDetail } from '@/features/workout/WorkoutDetail';
 import { CompleteSheet } from '@/features/workout/CompleteSheet';
@@ -28,6 +28,8 @@ const Router = __ARTIFACT__ ? MemoryRouter : BrowserRouter;
 
 export function App() {
   const [ready, setReady] = useState(false);
+  const [splash, setSplash] = useState(true);
+  const endSplash = useCallback(() => setSplash(false), []);
   const [initError, setInitError] = useState<string>();
   useEffect(() => {
     ensureInitialized()
@@ -42,17 +44,23 @@ export function App() {
   useTheme(settings?.theme ?? 'dark');
 
   if (initError) return <Fatal message={initError} />;
-  if (!ready || !settings) return <Spinner />;
+  const loaded = ready && !!settings;
 
+  // The splash keeps one position in the tree so its 3-second timer survives the app finishing loading.
   return (
-    <I18nProvider lang={settings.language}>
-      <ErrorBoundary>
-        <Router>
-          <UIProvider>
-            {settings.onboarded ? <Shell /> : <WelcomePage />}
-          </UIProvider>
-        </Router>
-      </ErrorBoundary>
+    <I18nProvider lang={settings?.language ?? 'en'}>
+      {loaded ? (
+        <ErrorBoundary>
+          <Router>
+            <UIProvider>
+              <Shell />
+            </UIProvider>
+          </Router>
+        </ErrorBoundary>
+      ) : (
+        !splash && <Spinner />
+      )}
+      {splash && <SplashScreen onDone={endSplash} />}
     </I18nProvider>
   );
 }

@@ -34,7 +34,7 @@ export async function ensureInitialized(): Promise<AppSettings> {
   return db.transaction('rw', db.settings, db.dutyTypes, async () => {
     let s = await db.settings.get('app');
     if (!s) {
-      s = defaultSettings();
+      s = { ...defaultSettings(), onboarded: true, language: navigator.language?.toLowerCase().startsWith('th') ? 'th' : 'en' };
       await db.settings.put(s);
     }
     if ((await db.dutyTypes.count()) === 0) {

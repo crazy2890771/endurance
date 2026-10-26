@@ -73,12 +73,6 @@ export const th: Record<TKey, string> = {
   'allow.limited': 'จำกัด',
   'allow.no': 'ห้ามฝึก',
 
-  'welcome.start': 'เริ่มต้นใช้งาน',
-  'welcome.language': 'ภาษา',
-  'welcome.units': 'หน่วย',
-  'welcome.demo': 'โหลดแผนตัวอย่าง',
-  'welcome.demoHint': 'เติมปฏิทินด้วยตารางบินและการฝึกตัวอย่างเพื่อทดลองใช้ ลบได้ภายหลังในหน้าตั้งค่า',
-  'welcome.empty': 'เริ่มด้วยแผนว่าง',
 
   'home.todayDuty': 'Duty วันนี้',
   'home.noDuty': 'ยังไม่ได้ใส่ Duty',

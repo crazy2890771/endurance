@@ -71,12 +71,6 @@ export const en = {
   'allow.limited': 'Limited',
   'allow.no': 'No training',
 
-  'welcome.start': 'Get Started',
-  'welcome.language': 'Language',
-  'welcome.units': 'Units',
-  'welcome.demo': 'Load demo plan',
-  'welcome.demoHint': 'Fills the calendar with a sample roster and workouts so you can explore. You can clear it later in Settings.',
-  'welcome.empty': 'Start with an empty plan',
 
   'home.todayDuty': 'Today’s duty',
   'home.noDuty': 'No duty entered',
