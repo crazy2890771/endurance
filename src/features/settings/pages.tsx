@@ -258,7 +258,10 @@ export function DataPage() {
   }, []);
 
   const stamp = todayISO();
-  const exportJson = async () => downloadFile(`ground-time-backup-${stamp}.json`, JSON.stringify(await createBackup(), null, 2), 'application/json');
+  const exportJson = async () => {
+    downloadFile(`ground-time-backup-${stamp}.json`, JSON.stringify(await createBackup(), null, 2), 'application/json');
+    await updateSettings((s) => ({ backup: { ...s.backup, lastAt: new Date().toISOString(), snoozeUntil: undefined } }));
+  };
   const restore = async (f?: File) => {
     if (!f) return;
     try {

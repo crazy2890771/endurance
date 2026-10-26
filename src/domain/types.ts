@@ -148,6 +148,10 @@ export interface AppSettings {
     lastError?: string;
   };
   deviceId: string;
+  /** Monthly backup reminder: when a backup was last saved, and until when "Later" hides it. */
+  backup?: { lastAt?: string; snoozeUntil?: string };
+  /** The "add to Home Screen" card was closed. */
+  installHintDismissed?: boolean;
   /** One-off data migrations already applied on this device. */
   migrations?: string[];
   updatedAt: string;

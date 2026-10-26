@@ -2,6 +2,11 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.10.0 — 2026-10-26
+- **Monthly backup reminder** on Home once you have workouts: "Back up now" saves a backup file (on iPhone through the share sheet → Save to Files / iCloud Drive), "Later" hides it for a week. It comes back 30 days after the last backup.
+- **Add to Home Screen** card on Home until the app is installed or the card is closed (one-tap Install on Android/Chrome).
+- Restoring a backup on a new phone: open `/settings/data` → Restore from backup.
+
 ## 1.9.0 — 2026-10-26
 - Settings is shorter: Workout Templates, Backup & Data, Cloud Sync and Install App are no longer listed. Your data and saved templates are untouched.
 

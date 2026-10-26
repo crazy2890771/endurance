@@ -13,6 +13,7 @@ import { formatDistance, formatDuration, formatKm } from '@/lib/format';
 import { useI18n } from '@/i18n';
 import { versionLabel } from '@/lib/version';
 import { usePlanWarnings } from '@/features/plancheck/usePlanWarnings';
+import { CareCards } from './CareCards';
 
 export function HomePage() {
   const today = todayISO();
@@ -134,6 +135,8 @@ export function HomePage() {
         {issues ? <AlertTriangle size={20} className="text-warn" /> : <ShieldCheck size={20} className="text-mint" />}
         <span className="text-sm font-medium flex-1">{issues ? t('home.warnings', { n: issues }) : t('home.planOk')}</span>
       </Link>
+
+      <CareCards settings={settings} />
 
       {/* Week summary */}
       <SectionTitle right={<span className="text-sm text-muted">{t('home.completedOf', { done: done.length, total })}</span>}>{t('home.thisWeek')}</SectionTitle>
