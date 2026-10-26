@@ -27,7 +27,7 @@ npm run preview    # serve the production build (service worker active)
 
 Requires Node 20 or later.
 
-On first launch you can tick **Load demo plan**. It fills six weeks around today with a realistic roster and workouts, every record notes "Demo data", and you can erase it under **Settings → Backup & Data**.
+On first launch you can tick **Load demo plan**. It fills six weeks around today with a realistic roster and workouts, every record notes "Demo data", and you can erase it on the Backup & Data page (`/settings/data`, no longer listed in Settings).
 
 ## Project structure
 
@@ -79,7 +79,7 @@ If a workout or its duty has no times, a *Limited* duty raises an information no
 
 ## Data, offline and sync
 
-- All data lives in IndexedDB on the device. The app asks for persistent storage, and **Settings → Backup & Data** shows whether the browser granted it.
+- All data lives in IndexedDB on the device. The app asks for persistent storage, and the Backup & Data page (`/settings/data`) shows whether the browser granted it.
 - Deletions are soft (tombstones), so they can sync and be undone.
 - The service worker precaches the whole app, including the PDF worker, so it opens and works with no network. A banner shows when you are offline, and an *Update* prompt appears when a new version is deployed.
 - **Cloud sync is optional.** See [docs/SUPABASE.md](docs/SUPABASE.md). Until you configure it, the Sync screen says **Not configured**. The app never pretends to sync.

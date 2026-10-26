@@ -2,6 +2,9 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.9.0 — 2026-10-26
+- Settings is shorter: Workout Templates, Backup & Data, Cloud Sync and Install App are no longer listed. Your data and saved templates are untouched.
+
 ## 1.8.0 — 2026-10-26
 - **See free time at a glance.** The month calendar marks each rostered day: green = free all day (OFF, ROFF, Rest, AL, Standby), amber = free between duties, red = no free time. A legend sits under the calendar, and tapping a day lists its free windows.
 - The week view shows the free windows on duty days (e.g. "Free 05:00–14:20") instead of "No workout planned", and "Free all day" on off days.
