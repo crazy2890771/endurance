@@ -32,6 +32,14 @@ The project ships no `404.html`, so Cloudflare Pages serves `index.html` for unk
 
 The service worker uses a *prompt* strategy. After a new deploy, users see "A new version is available → Update" the next time they open the app. Data in IndexedDB is not touched by updates.
 
+### Alternative: a Git-connected Cloudflare **Worker**
+
+Cloudflare's newer "Create application" flow may create a Worker instead of a Pages project. That works too: `wrangler.jsonc` at the repo root serves `dist/` as static assets, runs `npm run build` itself, and sends deep links to `index.html`.
+
+- The Worker's name in the dashboard must be `endurance`, matching `name` in `wrangler.jsonc`.
+- Build settings: leave *Build command* empty (or `npm run build`), and keep *Deploy command* `npx wrangler deploy`.
+- Every push to `main` deploys. The site is served at `https://endurance.<your-subdomain>.workers.dev`.
+
 ## 3. Install on iPhone
 
 Open the site in Safari, tap **Share → Add to Home Screen** and launch it from the icon. It runs standalone with safe-area insets and works offline.

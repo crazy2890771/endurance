@@ -1,0 +1,16 @@
+// Cloudflare Workers config: serve the built PWA from dist/ as static assets.
+// Used by Workers Builds (Git-connected Worker) and `npx wrangler deploy`.
+{
+  "name": "endurance",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": true,
+  "build": {
+    "command": "npm run build"
+  },
+  "assets": {
+    "directory": "./dist",
+    // Deep links such as /planner return index.html; the app router takes it from there.
+    "not_found_handling": "single-page-application"
+  }
+}
