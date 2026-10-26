@@ -40,6 +40,10 @@ Cloudflare's newer "Create application" flow may create a Worker instead of a Pa
 - Build settings: leave *Build command* empty (or `npm run build`), and keep *Deploy command* `npx wrangler deploy`.
 - Every push to `main` deploys. The site is served at `https://endurance.<your-subdomain>.workers.dev`.
 
+### Which version is live?
+
+Every build records its version, commit and build time. You can see them on the splash screen, under **Settings → About**, and at `/version.json` on the deployed site (never cached by the service worker). After a push, a matching commit means Cloudflare deployed it.
+
 ## 3. Install on iPhone
 
 Open the site in Safari, tap **Share → Add to Home Screen** and launch it from the icon. It runs standalone with safe-area insets and works offline.

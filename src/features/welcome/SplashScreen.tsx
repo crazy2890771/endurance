@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Logo } from '@/components/Logo';
 import { useI18n } from '@/i18n';
+import { versionLabel } from '@/lib/version';
 
 export const SPLASH_MS = 3000;
 
@@ -53,6 +54,9 @@ export function SplashScreen({ onDone }: { onDone: () => void }) {
         </h1>
         <p className={`text-sky mt-3 font-semibold ${lang === 'th' ? 'text-sm' : 'text-xs tracking-[.3em]'}`}>{t('app.tagline')}</p>
       </div>
+      <p className="absolute bottom-[calc(max(env(safe-area-inset-bottom),32px)+14px)] inset-x-0 z-10 flex justify-center">
+        <span className="rounded-md bg-black/40 px-2 py-0.5 text-[11px] text-white/60 tabular-nums">{versionLabel()}</span>
+      </p>
       <div className="absolute bottom-[max(env(safe-area-inset-bottom),32px)] left-1/2 -translate-x-1/2 z-10 w-24 h-1 rounded-full bg-white/15 overflow-hidden" aria-hidden="true">
         <div className="h-full bg-sky rounded-full" style={{ animation: `splash-progress ${SPLASH_MS}ms linear forwards` }} />
       </div>

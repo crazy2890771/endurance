@@ -320,6 +320,7 @@ export const th: Record<TKey, string> = {
   'settings.sync': 'ซิงก์คลาวด์',
   'settings.about': 'เกี่ยวกับ',
   'settings.version': 'เวอร์ชัน {v}',
+  'settings.build': 'บิลด์ {commit} · {date}',
   'settings.install': 'ติดตั้งแอป',
   'settings.install.sub': 'เพิ่มลงหน้าจอหลักเพื่อใช้แบบออฟไลน์',
   'settings.install.ios': 'ใน Safari แตะ แชร์ → “เพิ่มไปยังหน้าจอโฮม”',

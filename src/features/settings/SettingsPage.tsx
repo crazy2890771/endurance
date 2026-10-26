@@ -16,6 +16,7 @@ import { ListLink, PageHeader } from '@/components/ui';
 import { Logo } from '@/components/Logo';
 import { useI18n } from '@/i18n';
 import { useSyncStatus } from '@/sync/sync';
+import { APP_BUILT_AT, APP_COMMIT, APP_VERSION } from '@/lib/version';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -50,7 +51,7 @@ export function SyncChip() {
 }
 
 export function SettingsPage() {
-  const { t } = useI18n();
+  const { t, fmt } = useI18n();
   const sync = useSyncStatus();
   const [canInstall, setCanInstall] = useState(!!deferredPrompt);
   useEffect(() => {
@@ -111,7 +112,8 @@ export function SettingsPage() {
           </span>
           <div className="flex-1">
             <p className="font-semibold">{t('settings.about')}</p>
-            <p className="text-xs text-muted">{t('settings.version', { v: __APP_VERSION__ })}</p>
+            <p className="text-xs text-muted tabular-nums">{t('settings.version', { v: APP_VERSION })}</p>
+            <p className="text-[11px] text-muted tabular-nums">{t('settings.build', { commit: APP_COMMIT, date: fmt(new Date(APP_BUILT_AT), 'd MMM yyyy HH:mm') })}</p>
           </div>
           <Logo className="w-10 h-8 text-muted" />
         </div>

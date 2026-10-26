@@ -318,6 +318,7 @@ export const en = {
   'settings.sync': 'Cloud Sync',
   'settings.about': 'About',
   'settings.version': 'Version {v}',
+  'settings.build': 'Build {commit} · {date}',
   'settings.install': 'Install App',
   'settings.install.sub': 'Add to your home screen for offline use',
   'settings.install.ios': 'In Safari tap Share → “Add to Home Screen”.',
