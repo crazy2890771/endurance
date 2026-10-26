@@ -2,6 +2,9 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.3.1 — 2026-10-26
+- Fix AIMS PDF upload on iPhone Safari ("undefined is not a function"): page text is now read without async stream iteration, and the missing browser features pdf.js needs (stream async iteration, `Promise.withResolvers`) are filled in when absent.
+
 ## 1.3.0 — 2026-10-26
 - Renamed to **KIM · Ground Time** ("Your free time, planned"). The home-screen icon is labelled *Ground Time*. Data, backups and links carry over unchanged.
 

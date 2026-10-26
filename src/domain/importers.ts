@@ -292,8 +292,56 @@ export interface PdfTextItem {
   font: string;
 }
 
+/**
+ * Fill in what pdf.js needs but iOS Safari may lack: `for await` over a ReadableStream
+ * and Promise.withResolvers. No-op on browsers that already have them.
+ */
+function polyfillForPdfjs() {
+  // iOS < 17.4 lacks Promise.withResolvers, which pdf.js uses throughout.
+  const P = Promise as unknown as { withResolvers?: () => unknown };
+  if (!P.withResolvers) {
+    P.withResolvers = () => {
+      let resolve!: (v: unknown) => void;
+      let reject!: (e: unknown) => void;
+      const promise = new Promise((res, rej) => {
+        resolve = res;
+        reject = rej;
+      });
+      return { promise, resolve, reject };
+    };
+  }
+  type Iterable = ReadableStream & { [Symbol.asyncIterator]?: () => AsyncIterator<unknown> };
+  const proto = typeof ReadableStream !== 'undefined' ? (ReadableStream.prototype as Iterable) : undefined;
+  if (!proto || proto[Symbol.asyncIterator]) return;
+  proto[Symbol.asyncIterator] = async function* (this: ReadableStream) {
+    const reader = this.getReader();
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) return;
+        yield value;
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  } as () => AsyncIterator<unknown>;
+}
+
+/** Read a page's text by pulling the stream directly (avoids async iteration, for Safari). */
+async function pageTextItems(page: { streamTextContent: () => ReadableStream }) {
+  const reader = page.streamTextContent().getReader();
+  const items: unknown[] = [];
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    items.push(...((value as { items?: unknown[] }).items ?? []));
+  }
+  return items;
+}
+
 /** Extract positioned text from a PDF using pdf.js (loaded lazily). Runs entirely on the device. */
 export async function extractPdfItems(file: ArrayBuffer): Promise<PdfTextItem[]> {
+  polyfillForPdfjs();
   // The legacy build carries polyfills that iOS Safari and older browsers need.
   const pdfjs = await import('pdfjs-dist/legacy/build/pdf.mjs');
   const worker = await import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url');
@@ -303,9 +351,9 @@ export async function extractPdfItems(file: ArrayBuffer): Promise<PdfTextItem[]>
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
     const height = page.getViewport({ scale: 1 }).height;
-    const content = await page.getTextContent();
-    for (const item of content.items) {
-      if (!('str' in item) || !item.str.trim()) continue;
+    for (const raw of await pageTextItems(page as unknown as { streamTextContent: () => ReadableStream })) {
+      const item = raw as { str?: string; transform: number[]; fontName: string };
+      if (!item.str?.trim()) continue;
       out.push({ page: p, x: item.transform[4], y: height - item.transform[5], str: item.str.trim(), font: item.fontName });
     }
   }
