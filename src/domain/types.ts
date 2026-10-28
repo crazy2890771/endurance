@@ -121,6 +121,8 @@ export interface RuleConfig {
   keySessionsPerWeek: { enabled: boolean; max: number };
   /** Hard sessions: at least minHours before an early report (before 08:00), and not the day after an overnight duty. */
   hardNearDuty: { enabled: boolean; minHours: number };
+  /** No other run on the day of a long run (after it) or the following `days` days. */
+  runAfterLong: { enabled: boolean; days: number };
 }
 
 export interface HRZoneRange {

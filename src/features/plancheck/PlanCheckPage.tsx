@@ -17,6 +17,7 @@ const RULE_TO_IDS: Record<keyof RuleConfig, string[]> = {
   runVolume: ['runVolume'],
   keySessionsPerWeek: ['longRunPerWeek', 'intervalPerWeek', 'tempoPerWeek'],
   hardNearDuty: ['hardBeforeDuty', 'hardAfterOvernight'],
+  runAfterLong: ['runAfterLong'],
 };
 
 export function PlanCheckPage() {

@@ -2,6 +2,9 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.13.0 — 2026-10-28
+- New training rule **No running after a long run** (on by default, 1 day): warns about any run later the same day as a long run or on the day after it (also across the Saturday → Sunday week change). Cycling, swimming, strength and rest are fine. Set 1–3 days or turn it off under Training Rules.
+
 ## 1.12.0 — 2026-10-26
 - **Strava connection** (Settings → Strava) to bring in results from Garmin: pull recent activities, review how each maps onto the plan (completes the planned workout of the same kind that day, or adds a new completed workout), then save. Time, distance, average HR and pace are filled in; RPE stays yours. Undo, and no activity is imported twice.
 - The Cloudflare Worker now has a small API (`/api/strava`) for the Strava sign-in. The client secret stays in Cloudflare and the app only holds an encrypted token. Setup: [docs/STRAVA.md](docs/STRAVA.md).

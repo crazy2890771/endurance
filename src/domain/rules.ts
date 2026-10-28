@@ -22,7 +22,8 @@ export type RuleId =
   | 'intervalPerWeek'
   | 'tempoPerWeek'
   | 'hardBeforeDuty'
-  | 'hardAfterOvernight';
+  | 'hardAfterOvernight'
+  | 'runAfterLong';
 
 export interface RuleWarning {
   key: string;
@@ -384,6 +385,20 @@ export function evaluatePlan(input: EvaluateInput): RuleWarning[] {
         if (hits.length > max) out.push(warn(id, 'warning', hits.map((w) => w.date), hits.map((w) => w.id), { count: hits.length, max }));
       }
     }
+  }
+
+  // 8. No running right after a long run: later the same day, or the next `days` days.
+  if (rules.runAfterLong?.enabled) {
+    const days = rules.runAfterLong.days;
+    const runs = workouts.filter((w) => w.activity === 'run');
+    runs.forEach((long, i) => {
+      if (long.type !== 'long') return;
+      for (const r of runs.slice(i + 1)) {
+        if (r.date > addDaysISO(long.date, days)) break;
+        if (r.date < from || r.date > to) continue;
+        out.push(warn('runAfterLong', 'warning', [long.date, r.date], [long.id, r.id], { days, long: long.date }));
+      }
+    });
   }
 
   return out;

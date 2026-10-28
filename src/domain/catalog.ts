@@ -82,6 +82,7 @@ export const DEFAULT_RULES: RuleConfig = {
   runVolume: { enabled: true, maxIncreasePct: 10, minBaseKm: 10 },
   keySessionsPerWeek: { enabled: true, max: 1 },
   hardNearDuty: { enabled: true, minHours: 10 },
+  runAfterLong: { enabled: true, days: 1 },
 };
 
 export function defaultHrZones(maxHr = 185): AppSettings['hrZones'] {

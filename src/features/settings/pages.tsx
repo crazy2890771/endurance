@@ -54,6 +54,7 @@ const RULE_ROWS: { key: keyof RuleConfig; field: string; unit: TKey; min: number
   { key: 'runVolume', field: 'maxIncreasePct', unit: 'rules.unit.pct', min: 5, max: 100, step: 5 },
   { key: 'keySessionsPerWeek', field: 'max', unit: 'rules.unit.count', min: 1, max: 4, step: 1 },
   { key: 'hardNearDuty', field: 'minHours', unit: 'rules.unit.hours', min: 4, max: 16, step: 1 },
+  { key: 'runAfterLong', field: 'days', unit: 'rules.unit.days', min: 1, max: 3, step: 1 },
 ];
 
 export function RulesPage() {

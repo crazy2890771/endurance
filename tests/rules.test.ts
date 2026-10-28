@@ -346,3 +346,26 @@ describe('hard sessions near duty', () => {
     expect(run([w('2026-10-22', { type: 'easy', startTime: '16:00' })], only('hardNearDuty'), [night])).toHaveLength(0);
   });
 });
+
+describe('no running after a long run', () => {
+  it('warns about a run the day after a long run, or later the same day', () => {
+    const long = w('2026-10-24', { type: 'long', startTime: '06:00', durationMin: 120 });
+    const next = w('2026-10-25', { type: 'easy' });
+    const sameDay = w('2026-10-24', { type: 'recovery', startTime: '17:00' });
+    const res = run([long, next, sameDay], only('runAfterLong'));
+    expect(ids(res)).toEqual(['runAfterLong', 'runAfterLong']);
+    expect(res.map((x) => x.workoutIds[1]).sort()).toEqual([next.id, sameDay.id].sort());
+    expect(res[0].params).toMatchObject({ days: 1, long: '2026-10-24' });
+  });
+  it('allows other sports, runs before the long run, and runs after the window', () => {
+    const long = w('2026-10-21', { type: 'long', startTime: '06:00' });
+    expect(run([long, w('2026-10-22', { activity: 'cycle', type: 'easy' }), w('2026-10-22', { activity: 'swim', type: 'easy' })], only('runAfterLong'))).toHaveLength(0);
+    expect(run([w('2026-10-20'), long, w('2026-10-23')], only('runAfterLong'))).toHaveLength(0);
+  });
+  it('honours a longer window and skipped runs', () => {
+    const long = w('2026-10-21', { type: 'long' });
+    const r = { ...only('runAfterLong'), runAfterLong: { enabled: true, days: 2 } };
+    expect(ids(run([long, w('2026-10-23')], r))).toEqual(['runAfterLong']);
+    expect(run([long, w('2026-10-22', { status: 'skipped' })], only('runAfterLong'))).toHaveLength(0);
+  });
+});
