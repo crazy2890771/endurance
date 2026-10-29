@@ -69,6 +69,8 @@ export default defineConfig({
         navigateFallback: '/index.html',
         // API calls and the Strava sign-in redirects must reach the Worker, not the cached app shell.
         navigateFallbackDenylist: [/^\/api\//],
+        // Daily plan notifications (public/push-sw.js).
+        importScripts: ['push-sw.js'],
       },
     }),
   ],

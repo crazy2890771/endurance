@@ -86,6 +86,10 @@ If a workout or its duty has no times, a *Limited* duty raises an information no
 - The service worker precaches the whole app, including the PDF worker, so it opens and works with no network. A banner shows when you are offline, and an *Update* prompt appears when a new version is deployed.
 - **Cloud sync is optional.** See [docs/SUPABASE.md](docs/SUPABASE.md). Until you configure it, the Sync screen says **Not configured**. The app never pretends to sync.
 
+## Notifications
+
+**Settings → Notifications**: a push each morning (default 05:00) with the day's plan, only on days with a planned workout. Server side is `worker/push.ts`: one Durable Object per phone keeps the push subscription and an alarm; VAPID keys are generated and stored by the Worker, so there is nothing to configure. The text is built on the phone (`src/lib/notify.ts`, `public/push-sw.js`). On iPhone it needs the Home Screen app (iOS 16.4+).
+
 ## Strava
 
 Results from a Garmin (or any watch) via Strava: **Settings → Strava**. The Cloudflare Worker in `worker/` handles sign-in and keeps the client secret; see [docs/STRAVA.md](docs/STRAVA.md) for setup.

@@ -2,6 +2,11 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.14.0 — 2026-10-29
+- **Daily plan notification** (Settings → Notifications), default **05:00** local time: lists the day's planned workouts (time, name, duration) with the day's duty in the title. Days with nothing planned stay quiet. Includes a test button.
+- On iPhone it works in the app added to the Home Screen (iOS 16.4 or later); the page explains this when opened in Safari.
+- Privacy: the push carries no data. The phone builds the text from its own plan; the server only stores the push subscription, the time, the time zone, and which dates have a plan. A Cloudflare Durable Object per phone holds that and wakes at the set time (follows the phone's time zone, e.g. on a layover). No secrets to set up.
+
 ## 1.13.0 — 2026-10-28
 - New training rule **No running after a long run** (on by default, 1 day): warns about any run later the same day as a long run or on the day after it (also across the Saturday → Sunday week change). Cycling, swimming, strength and rest are fine. Set 1–3 days or turn it off under Training Rules.
 

@@ -39,6 +39,7 @@ Cloudflare's newer "Create application" flow may create a Worker instead of a Pa
 - The Worker's name in the dashboard must be `endurance`, matching `name` in `wrangler.jsonc`.
 - Build settings: leave *Build command* empty (or `npm run build`), and keep *Deploy command* `npx wrangler deploy`.
 - Every push to `main` deploys. The site is served at `https://endurance.<your-subdomain>.workers.dev`.
+- Daily plan notifications use a Durable Object (`PushReminder`, SQLite-backed, available on the free plan). `wrangler.jsonc` declares it and its migration, so the first deploy creates it; nothing to set in the dashboard.
 - The Worker also serves a small API under `/api/strava` (`worker/index.ts`). It needs the `STRAVA_CLIENT_ID` and `STRAVA_CLIENT_SECRET` secrets; until they are set the app just shows the setup steps. See [STRAVA.md](STRAVA.md).
 
 ### Which version is live?

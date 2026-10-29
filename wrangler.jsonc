@@ -10,6 +10,11 @@
   "build": {
     "command": "npm run build"
   },
+  // One Durable Object per phone keeps its push subscription and the daily reminder alarm (push.ts).
+  "durable_objects": {
+    "bindings": [{ "name": "REMINDERS", "class_name": "PushReminder" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["PushReminder"] }],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
