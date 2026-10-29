@@ -2,6 +2,22 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.15.0 — 2026-10-29
+**Leaner**
+- Home: the four per-activity count tiles are gone (they were mostly zeros); the backup and Add-to-Home-Screen cards moved to the bottom. The top-right icon is now a checklist (Plan Check) instead of a bell, which now means notifications.
+- The splash shows on the first launch of the day only.
+- Strava appears in Settings only once it's set up on the server (or connected).
+- Template buttons removed from Add Workout, matching the removed Templates menu.
+- Fixed duty labels repeating the badge (“Rest Rest”).
+
+**New**
+- Realistic starting durations per workout type (e.g. long run 90 min, interval 60, tempo 50, ride endurance 90), so the duty-clash check uses real lengths.
+- Home reminds you to upload next month's roster when the stored one ends within a week.
+- **Import from Garmin** (History → Import from Garmin): pick `.fit` files or Garmin Connect's “Export Original” `.zip`; read on the phone, matched to the plan and reviewed exactly like Strava. Free, no account needed.
+- **Weekly goals** (Settings → Units, Language & Theme): running km and/or training hours, with progress bars on Home.
+- Notifications: optional heads-up on free days with nothing planned (e.g. “Nothing planned yet today · Free 05:00–13:25”).
+- Fixed: settings saved from fast typing could be overwritten; settings writes are now atomic.
+
 ## 1.14.0 — 2026-10-29
 - **Daily plan notification** (Settings → Notifications), default **05:00** local time: lists the day's planned workouts (time, name, duration) with the day's duty in the title. Days with nothing planned stay quiet. Includes a test button.
 - On iPhone it works in the app added to the Home Screen (iOS 16.4 or later); the page explains this when opened in Safari.

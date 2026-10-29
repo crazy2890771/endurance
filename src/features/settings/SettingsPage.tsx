@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Activity, Bell, CalendarClock, Heart, Info, ListChecks, Plane, SlidersHorizontal } from 'lucide-react';
 import { useSettingsOrDefault } from '@/db/hooks';
+import { stravaStatus } from '@/lib/strava';
 import { ListLink, PageHeader } from '@/components/ui';
 import { Logo } from '@/components/Logo';
 import { useI18n } from '@/i18n';
@@ -24,6 +26,11 @@ export function SyncChip() {
 export function SettingsPage() {
   const { t, fmt } = useI18n();
   const { strava, notify } = useSettingsOrDefault();
+  // Strava shows once it's set up on the server (or already connected).
+  const [stravaReady, setStravaReady] = useState(false);
+  useEffect(() => {
+    if (!__ARTIFACT__) void stravaStatus().then(setStravaReady);
+  }, []);
   return (
     <div className="pb-28">
       <PageHeader
@@ -42,12 +49,14 @@ export function SettingsPage() {
             title={t('notify.pageTitle')}
             sub={notify?.enabled ? t('notify.onSub', { time: notify.time }) : t('notify.offSub')}
           />
-          <ListLink
-            to="/settings/strava"
-            icon={<Activity size={20} />}
-            title="Strava"
-            sub={strava ? t('strava.connectedAs', { name: strava.athlete || 'Strava' }) : t('strava.sub')}
-          />
+          {(strava || stravaReady) && (
+            <ListLink
+              to="/settings/strava"
+              icon={<Activity size={20} />}
+              title="Strava"
+              sub={strava ? t('strava.connectedAs', { name: strava.athlete || 'Strava' }) : t('strava.sub')}
+            />
+          )}
           <ListLink to="/settings/general" icon={<SlidersHorizontal size={20} />} title={t('settings.general')} sub={t('settings.general.sub')} />
         </nav>
 

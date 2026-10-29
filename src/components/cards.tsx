@@ -4,6 +4,9 @@ import { formatDistance, formatDuration } from '@/lib/format';
 import { useI18n } from '@/i18n';
 import { ActivityBadge } from './icons';
 
+/** A duty type's label, unless it just repeats the badge code (e.g. "Rest"). */
+export const dutyLabel = (type?: DutyType) => (type && type.label !== type.code ? type.label : '');
+
 export function workoutName(t: ReturnType<typeof useI18n>['t'], w: Pick<Workout, 'activity' | 'type'>) {
   if (w.activity === 'rest') return t('type.rest');
   if (w.activity === 'strength') return `${t('activity.strength')} · ${t(`type.${w.type}`)}`;

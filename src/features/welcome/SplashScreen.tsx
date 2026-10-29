@@ -5,7 +5,7 @@ import { versionLabel } from '@/lib/version';
 
 export const SPLASH_MS = 1500;
 
-/** Brand screen shown for 1.5 s on every launch; it fades out on its own (tap to skip). */
+/** Brand screen shown for 1.5 s on the first launch of the day; it fades out on its own (tap to skip). */
 export function SplashScreen({ onDone }: { onDone: () => void }) {
   const { t, lang } = useI18n();
   const [leaving, setLeaving] = useState(false);

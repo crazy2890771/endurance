@@ -20,6 +20,17 @@ export const TYPES_BY_ACTIVITY: Record<Activity, WorkoutType[]> = {
   rest: ['rest'],
 };
 
+/** Starting duration (minutes) for a new workout of each kind; long sessions get realistic lengths. */
+export function defaultDuration(activity: Activity, type: WorkoutType): number {
+  const table: Partial<Record<Activity, Partial<Record<WorkoutType, number>>>> = {
+    run: { easy: 45, recovery: 30, tempo: 50, interval: 60, long: 90 },
+    cycle: { easy: 60, endurance: 90, tempo: 60, interval: 60 },
+    swim: { easy: 40, technique: 40, endurance: 50, interval: 45 },
+    strength: { upper: 40, lower: 45, full: 50, mobility: 25 },
+  };
+  return table[activity]?.[type] ?? 45;
+}
+
 export const LOCATIONS_BY_ACTIVITY: Record<Activity, Location[]> = {
   run: ['outdoor', 'indoor'],
   cycle: ['outdoor', 'indoor'],

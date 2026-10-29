@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { CalendarDays, ChevronLeft, ChevronRight, ClipboardCheck, Clock, Copy, Moon, Plane, Plus, X } from 'lucide-react';
 import { useUI } from '@/app/ui';
 import { Segmented } from '@/components/ui';
-import { DutyBadge, WorkoutCard } from '@/components/cards';
+import { DutyBadge, WorkoutCard, dutyLabel } from '@/components/cards';
 import { ACTIVITY_BAR } from '@/components/icons';
 import { useDuties, useDutyTypes, useSettingsOrDefault, useWorkouts } from '@/db/hooks';
 import { copyWeek, deleteWorkout, moveWorkout } from '@/db/repo';
@@ -465,7 +465,7 @@ function DayDetail({ date, workouts, duties, restUntil, free, typeById, warned, 
           <button key={d.id} className="card p-3 flex items-center gap-2 text-left" onClick={() => open({ kind: 'dutyEditor', id: d.id })}>
             <DutyBadge duty={d} type={typeById.get(d.dutyTypeId)} />
             <span className="text-sm text-muted truncate">
-              {d.startTime && d.endTime ? `${d.startTime}–${d.endTime}` : typeById.get(d.dutyTypeId)?.label}
+              {d.startTime && d.endTime ? `${d.startTime}–${d.endTime}` : dutyLabel(typeById.get(d.dutyTypeId))}
               {d.title ? ` · ${d.title}` : ''}
             </span>
           </button>

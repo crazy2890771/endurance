@@ -33,6 +33,17 @@ export function buildDigest(date: ISODate, workouts: Workout[], duties: Duty[], 
   };
 }
 
+type FreeT = (key: 'notify.freeTitle' | 'notify.freeAllDay' | 'notify.freeWindows', params?: Record<string, string | number>) => string;
+
+/** Notification for a rostered day with free time but nothing planned (optional). */
+export function buildFreeDigest(free: { level: string; windows: { start: number; end: number }[] }, t: FreeT): Digest | null {
+  const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  if (free.level === 'free') return { title: t('notify.freeTitle'), body: t('notify.freeAllDay') };
+  if (free.level === 'partial' && free.windows.length)
+    return { title: t('notify.freeTitle'), body: t('notify.freeWindows', { windows: free.windows.map((w) => `${hhmm(w.start)}–${hhmm(w.end)}`).join(' · ') }) };
+  return null;
+}
+
 // ---------- on-device store the service worker reads (public/push-sw.js) ----------
 
 function openStore(): Promise<IDBDatabase> {

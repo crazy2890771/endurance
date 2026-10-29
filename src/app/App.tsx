@@ -13,6 +13,7 @@ import { PlannerPage } from '@/features/planner/PlannerPage';
 import { HistoryPage } from '@/features/history/HistoryPage';
 import { SettingsPage } from '@/features/settings/SettingsPage';
 import { StravaPage } from '@/features/settings/StravaPage';
+import { FitImportPage } from '@/features/history/FitImportPage';
 import { NotificationsPage } from '@/features/settings/NotificationsPage';
 import { NotifySync } from '@/features/settings/NotifySync';
 import { DataPage, GeneralPage, RulesPage, TemplatesPage, ZonesPage } from '@/features/settings/pages';
@@ -21,6 +22,7 @@ import { PlanCheckPage } from '@/features/plancheck/PlanCheckPage';
 import { DutiesPage } from '@/features/duty/DutiesPage';
 import { ImportPage } from '@/features/duty/ImportPage';
 import { DutyTypesPage } from '@/features/duty/DutyTypesPage';
+import { todayISO } from '@/lib/dates';
 import { SplashScreen } from '@/features/welcome/SplashScreen';
 import { WorkoutEditor } from '@/features/workout/WorkoutEditor';
 import { WorkoutDetail } from '@/features/workout/WorkoutDetail';
@@ -31,8 +33,22 @@ const Router = __ARTIFACT__ ? MemoryRouter : BrowserRouter;
 
 export function App() {
   const [ready, setReady] = useState(false);
-  const [splash, setSplash] = useState(true);
-  const endSplash = useCallback(() => setSplash(false), []);
+  // The brand splash shows on the first launch of the day only.
+  const [splash, setSplash] = useState(() => {
+    try {
+      return localStorage.getItem('gt-splash-day') !== todayISO();
+    } catch {
+      return true;
+    }
+  });
+  const endSplash = useCallback(() => {
+    setSplash(false);
+    try {
+      localStorage.setItem('gt-splash-day', todayISO());
+    } catch {
+      /* private mode: show it next time too */
+    }
+  }, []);
   const [initError, setInitError] = useState<string>();
   useEffect(() => {
     ensureInitialized()
@@ -102,6 +118,7 @@ function Shell() {
           <Route path="/planner" element={<PlannerPage />} />
           <Route path="/plan-check" element={<PlanCheckPage />} />
           <Route path="/history" element={<HistoryPage />} />
+          <Route path="/history/import" element={<FitImportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/settings/duties" element={<DutiesPage />} />
           <Route path="/settings/import" element={<ImportPage />} />

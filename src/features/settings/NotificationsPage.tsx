@@ -73,6 +73,13 @@ export function NotificationsPage() {
             <Field label={t('notify.time')} htmlFor="n-time">
               <input id="n-time" type="time" className="input" value={time} disabled={busy} onChange={(e) => saveTime(e.target.value)} />
             </Field>
+            <div className="card p-4 flex items-center gap-3 -mt-2">
+              <span className="flex-1">
+                <span className="block font-semibold text-sm">{t('notify.freeDays')}</span>
+                <span className="block text-xs text-muted">{t('notify.freeDaysHint')}</span>
+              </span>
+              <Toggle label={t('notify.freeDays')} checked={!!notify.freeDays} onChange={(freeDays) => void updateSettings({ notify: { ...notify, freeDays } })} />
+            </div>
             {notify.enabled && (
               <button className="btn-ghost" disabled={busy} onClick={() => void run(testPush, t('notify.testSent'))}>
                 <Send size={18} /> {t('notify.test')}

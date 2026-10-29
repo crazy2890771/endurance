@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowLeft, BookmarkPlus, Building2, CheckCircle2, Plus, Sun, Trash2, Waves, Mountain } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Building2, CheckCircle2, Plus, Sun, Trash2, Waves, Mountain } from 'lucide-react';
 import { useUI } from '@/app/ui';
 import { ChipGroup, Field, Stepper } from '@/components/ui';
 import { Sheet } from '@/components/Sheet';
 import { ACTIVITY_ICON, ACTIVITY_TEXT } from '@/components/icons';
 import { workoutName } from '@/components/cards';
 import { db } from '@/db/db';
-import { useDuties, useDutyTypes, useSettingsOrDefault, useTemplates } from '@/db/hooks';
-import { saveTemplate, saveWorkout, type WorkoutDraft } from '@/db/repo';
+import { useDuties, useDutyTypes, useSettingsOrDefault } from '@/db/hooks';
+import { saveWorkout, type WorkoutDraft } from '@/db/repo';
 import {
   ACTIVITIES,
   DEFAULT_ZONE_BY_TYPE,
+  defaultDuration,
   LOCATIONS_BY_ACTIVITY,
   TYPES_BY_ACTIVITY,
   supportsIntervals,
@@ -68,19 +69,16 @@ export function WorkoutEditor() {
   const isOpen = sheet.kind === 'workoutEditor';
   const params = isOpen ? sheet : undefined;
   const settings = useSettingsOrDefault();
-  const templates = useTemplates();
   const { t } = useI18n();
   const [step, setStep] = useState(1);
   const [f, setF] = useState<FormState>(initial());
   const [existing, setExisting] = useState<Workout>();
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [tplName, setTplName] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!params) return;
     setErrors({});
-    setTplName(null);
     if (params.id) {
       void db.workouts.get(params.id).then((w) => {
         if (!w) return;
@@ -109,7 +107,7 @@ export function WorkoutEditor() {
       type,
       location: LOCATIONS_BY_ACTIVITY[a][0],
       hrZone: a === 'strength' || a === 'rest' ? undefined : (DEFAULT_ZONE_BY_TYPE[type] ?? s.hrZone),
-      durationMin: a === 'swim' ? 40 : a === 'strength' ? 40 : a === 'cycle' ? 60 : 45,
+      durationMin: existing ? s.durationMin : defaultDuration(a, type),
       distance: '',
     }));
     setStep(a === 'rest' ? 3 : 2);
@@ -119,6 +117,7 @@ export function WorkoutEditor() {
     setF((s) => ({
       ...s,
       type,
+      durationMin: existing ? s.durationMin : defaultDuration(s.activity, type),
       hrZone: s.activity === 'strength' ? undefined : (DEFAULT_ZONE_BY_TYPE[type] ?? s.hrZone),
       intervals: supportsIntervals(type) ? (s.intervals.length ? s.intervals : type === 'interval' ? [{ reps: 6, distanceM: s.activity === 'swim' ? 100 : 800, recoverySec: 90 }] : []) : [],
     }));
@@ -175,15 +174,6 @@ export function WorkoutEditor() {
     }
   }
 
-  async function onSaveTemplate() {
-    const d = validate();
-    if (!d || !tplName?.trim()) return;
-    const { date: _d, startTime: _s, status: _st, result: _r, id: _id, ...rest } = d;
-    await saveTemplate({ ...rest, name: tplName.trim() });
-    setTplName(null);
-    toast(t('wizard.templateSaved'));
-  }
-
   const title = existing ? t('wizard.edit') : t('wizard.add');
   const back =
     step > 1 ? (
@@ -197,23 +187,10 @@ export function WorkoutEditor() {
   return (
     <Sheet open={isOpen} onClose={close} title={title} leading={back} tall footer={step === 3 ? (
       <div className="flex flex-col gap-2">
-        {tplName !== null ? (
-          <div className="flex gap-2">
-            <input className="input flex-1" autoFocus placeholder={t('wizard.templateName')} aria-label={t('wizard.templateName')} value={tplName} onChange={(e) => setTplName(e.target.value)} />
-            <button className="btn-sky" disabled={!tplName.trim()} onClick={onSaveTemplate}>
-              {t('common.save')}
-            </button>
-          </div>
-        ) : null}
         <div className="flex gap-2">
           <button className="btn-ghost flex-1" onClick={close}>
             {t('common.cancel')}
           </button>
-          {f.activity !== 'rest' && tplName === null && (
-            <button className="btn-ghost" aria-label={t('wizard.saveTemplate')} title={t('wizard.saveTemplate')} onClick={() => setTplName(workoutName(t, f))}>
-              <BookmarkPlus size={20} />
-            </button>
-          )}
           <button className="btn-primary flex-[2]" onClick={onSave} disabled={saving}>
             {t('common.save')}
           </button>
@@ -242,23 +219,6 @@ export function WorkoutEditor() {
               );
             })}
           </div>
-          {templates && templates.length > 0 && (
-            <div className="mt-6">
-              <p className="label">{t('wizard.fromTemplate')}</p>
-              <div className="flex flex-col gap-2">
-                {templates.map((tpl) => {
-                  const Icon = ACTIVITY_ICON[tpl.activity];
-                  return (
-                    <button key={tpl.id} className="flex items-center gap-3 rounded-2xl bg-card2 px-3 py-3 text-left" onClick={() => open({ kind: 'workoutEditor', date: f.date, template: tpl })}>
-                      <Icon size={20} className={ACTIVITY_TEXT[tpl.activity]} />
-                      <span className="flex-1 font-medium truncate">{tpl.name}</span>
-                      <span className="text-xs text-muted">{tpl.durationMin} {t('common.min')}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       )}
 

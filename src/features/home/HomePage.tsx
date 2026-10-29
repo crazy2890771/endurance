@@ -1,18 +1,19 @@
 import { Link } from 'react-router-dom';
-import { AlertTriangle, Bell, CheckCircle2, Clock, MapPin, Plane, Plus, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, CalendarClock, CheckCircle2, ClipboardCheck, Clock, MapPin, Plane, Plus, ShieldCheck } from 'lucide-react';
 import { useUI } from '@/app/ui';
 import { Logo } from '@/components/Logo';
 import { SectionTitle } from '@/components/ui';
-import { DutyBadge, WorkoutCard, workoutName } from '@/components/cards';
-import { ACTIVITY_BG, ACTIVITY_ICON, ACTIVITY_TEXT, ActivityBadge } from '@/components/icons';
+import { DutyBadge, WorkoutCard, dutyLabel, workoutName } from '@/components/cards';
+import { ActivityBadge } from '@/components/icons';
 import { useDuties, useDutyTypes, useSettingsOrDefault, useWorkouts } from '@/db/hooks';
-import { TRAINING_ACTIVITIES } from '@/domain/catalog';
 import { dayAvailability, dutiesShownOn, effectiveDistanceKm, restAfterOvernight } from '@/domain/rules';
 import { addDaysISO, formatMin, fromISODate, todayISO, weekDays } from '@/lib/dates';
 import { formatDistance, formatDuration, formatKm } from '@/lib/format';
 import { useI18n } from '@/i18n';
 import { versionLabel } from '@/lib/version';
 import { usePlanWarnings } from '@/features/plancheck/usePlanWarnings';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { db } from '@/db/db';
 import { CareCards } from './CareCards';
 
 export function HomePage() {
@@ -38,6 +39,13 @@ export function HomePage() {
   const doneKm = (a: string) => done.filter((w) => w.activity === a).reduce((s, w) => s + effectiveDistanceKm(w), 0);
   const upcoming = (workouts ?? []).filter((w) => w.date > today && w.date <= addDaysISO(today, 7) && w.status === 'planned').slice(0, 5);
   const issues = warnings?.active.length ?? 0;
+  const goals = settings.goals;
+  // Remind to upload next month's roster when the stored one ends within a week.
+  const rosterEnd = useLiveQuery(async () => {
+    const last = await db.duties.orderBy('date').reverse().filter((d) => !d.deleted).first();
+    return last ? (last.endDate ?? last.date) : null;
+  }, []);
+  const rosterEnding = !!rosterEnd && rosterEnd < addDaysISO(today, 7);
   // Free training time this week (05:00–23:00 outside duty), against what's planned and done.
   const freeMin = week.reduce((s, d) => {
     const a = dayAvailability(d, duties ?? [], dutyTypes ?? [], settings.rules.dutyOverlap);
@@ -53,12 +61,22 @@ export function HomePage() {
         <Logo className="w-9 h-9 text-ink" />
         <span className="flex-1 font-extrabold tracking-wide text-sm">{t('app.name')}</span>
         <Link to="/plan-check" className="icon-btn relative" aria-label={t('planner.planCheck')}>
-          <Bell size={22} />
+          <ClipboardCheck size={22} />
           {issues > 0 && <span className="absolute top-2 right-2 w-2.5 h-2.5 rounded-full bg-warn" />}
         </Link>
       </header>
 
       <p className="text-muted text-sm mt-1">{fmt(fromISODate(today), 'EEEE d MMMM yyyy')}</p>
+
+      {rosterEnding && (
+        <Link to="/settings/import" className="card mt-3 px-4 py-3 flex items-center gap-3 border-warn/40 bg-warn/5">
+          <CalendarClock size={20} className="text-warn shrink-0" />
+          <span className="text-sm flex-1">
+            {rosterEnd! < today ? t('home.rosterEnded') : t('home.rosterEnds', { date: fmt(fromISODate(rosterEnd!), 'd MMM') })}
+          </span>
+          <span className="text-sm text-sky font-semibold shrink-0">{t('home.rosterUpload')}</span>
+        </Link>
+      )}
 
       {/* Duty */}
       <div className="mt-3 flex items-center gap-2 flex-wrap">
@@ -69,7 +87,7 @@ export function HomePage() {
             <button key={d.id} className="flex items-center gap-2" onClick={() => open({ kind: 'dutyEditor', id: d.id })}>
               <DutyBadge duty={d} type={typeById.get(d.dutyTypeId)} />
               <span className="text-sm text-muted">
-                {d.startTime && d.endTime ? `${d.startTime}–${d.endTime}` : typeById.get(d.dutyTypeId)?.label}
+                {d.startTime && d.endTime ? `${d.startTime}–${d.endTime}` : dutyLabel(typeById.get(d.dutyTypeId))}
                 {d.title ? ` · ${d.title}` : ''}
               </span>
             </button>
@@ -144,31 +162,14 @@ export function HomePage() {
         <span className="text-sm font-medium flex-1">{issues ? t('home.warnings', { n: issues }) : t('home.planOk')}</span>
       </Link>
 
-      <CareCards settings={settings} />
-
       {/* Week summary */}
       <SectionTitle right={<span className="text-sm text-muted">{t('home.completedOf', { done: done.length, total })}</span>}>{t('home.thisWeek')}</SectionTitle>
       <div className="h-2 rounded-full bg-card2 overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done.length}>
         <div className="h-full bg-mint rounded-full transition-all" style={{ width: `${total ? (done.length / total) * 100 : 0}%` }} />
       </div>
-      <div className="grid grid-cols-4 gap-2 mt-4">
-        {TRAINING_ACTIVITIES.map((a) => {
-          const Icon = ACTIVITY_ICON[a];
-          const n = done.filter((w) => w.activity === a).length;
-          const km = a === 'strength' ? undefined : doneKm(a);
-          return (
-            <div key={a} className="card py-3 flex flex-col items-center gap-1">
-              <span className={`w-11 h-11 rounded-full flex items-center justify-center ${ACTIVITY_BG[a]} ${ACTIVITY_TEXT[a]}`}>
-                <Icon size={22} />
-              </span>
-              <span className="text-[11px] text-muted">{t(`activity.${a}`)}</span>
-              <span className="font-bold">{n}</span>
-              {km !== undefined && <span className="text-[10px] text-muted">{a === 'swim' ? formatDistance(km, 'swim', settings.units) : formatKm(km, settings.units)}</span>}
-            </div>
-          );
-        })}
-      </div>
-      <div className="card p-4 mt-2 flex flex-col gap-3">
+      <div className="card p-4 mt-3 flex flex-col gap-3">
+        {goals?.runKm ? <GoalRow label={t('home.goalRun')} done={doneKm('run')} goal={goals.runKm} text={`${formatKm(doneKm('run'), settings.units)} / ${formatKm(goals.runKm, settings.units)}`} /> : null}
+        {goals?.hours ? <GoalRow label={t('home.goalHours')} done={doneMin} goal={goals.hours * 60} text={`${formatDuration(doneMin)} / ${formatDuration(goals.hours * 60)}`} /> : null}
         {rostered && (
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-muted">{t('home.freeTime')}</span>
@@ -181,7 +182,7 @@ export function HomePage() {
             {formatDuration(doneMin)} <span className="text-muted font-normal">/ {formatDuration(plannedMin)}</span>
           </span>
         </div>
-        {sumKm('run') > 0 && (
+        {sumKm('run') > 0 && !goals?.runKm && (
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-muted">{t('home.running')}</span>
             <span className="font-bold tabular-nums">
@@ -215,6 +216,8 @@ export function HomePage() {
         <p className="text-sm text-muted card p-4">{t('home.noUpcoming')}</p>
       )}
 
+      <CareCards settings={settings} />
+
       <button className="btn-sky w-full mt-6" onClick={() => open({ kind: 'workoutEditor', date: today })}>
         <Plus size={20} /> {t('home.quickAdd')}
       </button>
@@ -222,6 +225,21 @@ export function HomePage() {
       <Link to="/settings" className="block text-center text-[11px] text-muted tabular-nums mt-6 py-2">
         {versionLabel()}
       </Link>
+    </div>
+  );
+}
+
+function GoalRow({ label, done, goal, text }: { label: string; done: number; goal: number; text: string }) {
+  const pct = Math.min(100, goal ? (done / goal) * 100 : 0);
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm text-muted">{label}</span>
+        <span className={`font-bold tabular-nums ${pct >= 100 ? 'text-mint' : ''}`}>{text}</span>
+      </div>
+      <div className="h-1.5 mt-1.5 rounded-full bg-card2 overflow-hidden" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={goal} aria-valuenow={Math.round(done)}>
+        <div className="h-full bg-mint rounded-full" style={{ width: `${pct}%` }} />
+      </div>
     </div>
   );
 }

@@ -36,8 +36,37 @@ export function GeneralPage() {
         <Field label={t('general.weekStart')}>
           <Segmented value={s.weekStartsOn} onChange={(weekStartsOn) => updateSettings({ weekStartsOn })} options={[{ value: 1 as const, label: t('general.monday') }, { value: 0 as const, label: t('general.sunday') }]} />
         </Field>
+        <p className="label mt-2">{t('general.goals')}</p>
+        <p className="text-xs text-muted -mt-1 mb-3">{t('general.goalsHint')}</p>
+        <div className="grid grid-cols-2 gap-3">
+          <GoalInput id="g-run" label={t('general.goalRun')} value={s.goals?.runKm} onSave={(runKm) => updateSettings((c) => ({ goals: { ...c.goals, runKm } }))} />
+          <GoalInput id="g-hours" label={t('general.goalHours')} step={0.5} value={s.goals?.hours} onSave={(hours) => updateSettings((c) => ({ goals: { ...c.goals, hours } }))} />
+        </div>
       </div>
     </div>
+  );
+}
+
+/** Number field that keeps what's typed locally and saves it, so typing isn't reset by the async store. */
+function GoalInput({ id, label, value, step = 1, onSave }: { id: string; label: string; value?: number; step?: number; onSave: (v: number) => void }) {
+  const [text, setText] = useState(value ? String(value) : '');
+  return (
+    <Field label={label} htmlFor={id}>
+      <input
+        id={id}
+        type="number"
+        inputMode="decimal"
+        min={0}
+        step={step}
+        className="input"
+        placeholder="0"
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value);
+          onSave(Math.max(0, Number(e.target.value) || 0));
+        }}
+      />
+    </Field>
   );
 }
 

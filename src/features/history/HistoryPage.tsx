@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { BarChart3, Clock, CheckCircle2, ChevronLeft, ChevronRight, Gauge, History as HistoryIcon } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { BarChart3, Clock, CheckCircle2, ChevronLeft, ChevronRight, FileUp, Gauge, History as HistoryIcon } from 'lucide-react';
 import { useUI } from '@/app/ui';
 import { EmptyState, PageHeader, Segmented, SectionTitle } from '@/components/ui';
 import { WorkoutCard } from '@/components/cards';
@@ -79,7 +80,14 @@ export function HistoryPage() {
 
   return (
     <div className="pb-28">
-      <PageHeader title={t('history.title')} />
+      <PageHeader
+        title={t('history.title')}
+        right={
+          <Link to="/history/import" className="chip min-h-[40px] text-xs gap-1.5 mr-2 bg-mint/15 text-mint">
+            <FileUp size={16} /> {t('fit.button')}
+          </Link>
+        }
+      />
       <div className="px-4">
         <Segmented
           value={period}

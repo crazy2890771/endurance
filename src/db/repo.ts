@@ -83,9 +83,12 @@ async function migrateStandby(s: AppSettings) {
 }
 
 export async function updateSettings(patch: Partial<AppSettings> | ((s: AppSettings) => Partial<AppSettings>)) {
-  const cur = (await db.settings.get('app')) ?? defaultSettings();
-  const p = typeof patch === 'function' ? patch(cur) : patch;
-  await db.settings.put({ ...cur, ...p, id: 'app', updatedAt: nowIso() });
+  // One transaction, so quick successive saves (e.g. typing) apply in order.
+  await db.transaction('rw', db.settings, async () => {
+    const cur = (await db.settings.get('app')) ?? defaultSettings();
+    const p = typeof patch === 'function' ? patch(cur) : patch;
+    await db.settings.put({ ...cur, ...p, id: 'app', updatedAt: nowIso() });
+  });
 }
 
 // ---------- workouts ----------

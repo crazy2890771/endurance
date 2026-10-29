@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { handlePush, localDate, makeVapidKeys, nextAt, PushReminder, vapidAuth, type DONamespace, type DOState } from '../worker/push';
-import { buildDigest } from '@/lib/notify';
+import { buildDigest, buildFreeDigest } from '@/lib/notify';
 import { BUILTIN_DUTY_TYPES } from '@/domain/catalog';
 import type { Duty, DutyType, Workout } from '@/domain/types';
 
@@ -146,5 +146,16 @@ describe('notification text', () => {
     expect(buildDigest('2026-10-30', [w({ status: 'skipped' })], [], types, t, name)).toBeNull();
     const night: Duty = { id: 'n', date: '2026-10-29', dutyTypeId: 'dt-flight', startTime: '20:00', endTime: '01:00', source: 'aims', createdAt: '', updatedAt: '' };
     expect(buildDigest('2026-10-30', [w({})], [night], types, t, name)!.title).toBe('notify.title:1');
+  });
+});
+
+describe('free-day notification', () => {
+  const t = (k: string, p: Record<string, string | number> = {}) => `${k}:${Object.values(p).join('|')}`;
+  it('describes free time, or nothing when there is none or no roster', () => {
+    expect(buildFreeDigest({ level: 'free', windows: [] }, t)).toEqual({ title: 'notify.freeTitle:', body: 'notify.freeAllDay:' });
+    expect(buildFreeDigest({ level: 'partial', windows: [{ start: 300, end: 805 }, { start: 1080, end: 1380 }] }, t)!.body).toBe('notify.freeWindows:05:00–13:25 · 18:00–23:00');
+    expect(buildFreeDigest({ level: 'busy', windows: [] }, t)).toBeNull();
+    expect(buildFreeDigest({ level: 'unknown', windows: [] }, t)).toBeNull();
+    expect(buildFreeDigest({ level: 'partial', windows: [] }, t)).toBeNull();
   });
 });
