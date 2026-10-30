@@ -90,6 +90,10 @@ If a workout or its duty has no times, a *Limited* duty raises an information no
 
 **Settings → Notifications**: a push each morning (default 05:00) with the day's plan, only on days with a planned workout. Server side is `worker/push.ts`: one Durable Object per phone keeps the push subscription and an alarm; VAPID keys are generated and stored by the Worker, so there is nothing to configure. The text is built on the phone (`src/lib/notify.ts`, `public/push-sw.js`). On iPhone it needs the Home Screen app (iOS 16.4+).
 
+## iPhone Calendar
+
+**Settings → iPhone Calendar** publishes duties and workouts as a private subscribed calendar (`/api/cal/<token>.ics`, `worker/calendar.ts`; built on the phone in `src/lib/calendar.ts`). The app re-uploads when the plan changes; the Calendar refreshes on its own schedule. Unlike the rest of the app, this keeps those events on the server behind the secret link.
+
 ## Garmin files
 
 **History → Import from Garmin** reads `.fit` files or Garmin Connect's "Export Original" `.zip` on the phone (`src/lib/fit.ts`) and uses the same matching and review as Strava.

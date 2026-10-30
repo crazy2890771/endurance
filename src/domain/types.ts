@@ -160,6 +160,8 @@ export interface AppSettings {
   strava?: { token: string; athlete?: string; connectedAt: string; lastSyncAt?: string };
   /** Weekly targets shown on Home (0 or missing = off). */
   goals?: { runKm?: number; hours?: number };
+  /** iPhone Calendar link: the secret token of /api/cal/<token>.ics and when it was last updated. */
+  calendar?: { token: string; lastSyncAt?: string };
   /** Daily plan notification at `time` (local), sent only on days with a planned workout. */
   notify?: { enabled: boolean; time: string; freeDays?: boolean };
   /** The "add to Home Screen" card was closed. */

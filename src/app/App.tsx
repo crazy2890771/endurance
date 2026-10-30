@@ -16,6 +16,8 @@ import { StravaPage } from '@/features/settings/StravaPage';
 import { FitImportPage } from '@/features/history/FitImportPage';
 import { NotificationsPage } from '@/features/settings/NotificationsPage';
 import { NotifySync } from '@/features/settings/NotifySync';
+import { CalendarPage } from '@/features/settings/CalendarPage';
+import { CalendarSync } from '@/features/settings/CalendarSync';
 import { DataPage, GeneralPage, RulesPage, TemplatesPage, ZonesPage } from '@/features/settings/pages';
 import { SyncPage } from '@/features/settings/SyncPage';
 import { PlanCheckPage } from '@/features/plancheck/PlanCheckPage';
@@ -129,6 +131,7 @@ function Shell() {
           <Route path="/settings/general" element={<GeneralPage />} />
           <Route path="/settings/strava" element={<StravaPage />} />
           <Route path="/settings/notifications" element={<NotificationsPage />} />
+          <Route path="/settings/calendar" element={<CalendarPage />} />
           <Route path="/settings/data" element={<DataPage />} />
           <Route path="/settings/sync" element={<SyncPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -140,6 +143,7 @@ function Shell() {
       <CompleteSheet />
       <DutyEditor />
       {!__ARTIFACT__ && <NotifySync />}
+      {!__ARTIFACT__ && <CalendarSync />}
     </div>
   );
 }

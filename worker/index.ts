@@ -1,6 +1,6 @@
 /**
  * Cloudflare Worker: serves the PWA from static assets, a small Strava API under /api/strava, and
- * daily plan notifications under /api/push (see push.ts).
+ * daily plan notifications under /api/push (see push.ts), and the calendar feed under /api/cal (calendar.ts).
  *
  * The Strava client secret stays here (Cloudflare secret). After OAuth the Strava tokens are
  * encrypted with a key derived from that secret and handed to the app as an opaque string; the app
@@ -10,12 +10,14 @@
  */
 
 import { handlePush, PushReminder, type DONamespace } from './push';
+import { CalendarFeed, handleCalendar } from './calendar';
 
-export { PushReminder };
+export { PushReminder, CalendarFeed };
 
 export interface Env {
   ASSETS: { fetch: (req: Request) => Promise<Response> };
   REMINDERS?: DONamespace;
+  CALENDARS?: DONamespace;
   STRAVA_CLIENT_ID?: string;
   STRAVA_CLIENT_SECRET?: string;
 }
@@ -218,6 +220,7 @@ export default {
     const { pathname } = new URL(req.url);
     if (pathname.startsWith('/api/strava/')) return handleStrava(req, env);
     if (pathname.startsWith('/api/push/')) return handlePush(req, env);
+    if (pathname.startsWith('/api/cal/')) return handleCalendar(req, env);
     if (pathname.startsWith('/api/')) return json({ error: 'not_found' }, 404);
     return env.ASSETS.fetch(req);
   },

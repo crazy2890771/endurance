@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Activity, Bell, CalendarClock, Heart, Info, ListChecks, Plane, SlidersHorizontal } from 'lucide-react';
+import { Activity, Bell, CalendarCheck, CalendarClock, Heart, Info, ListChecks, Plane, SlidersHorizontal } from 'lucide-react';
 import { useSettingsOrDefault } from '@/db/hooks';
 import { stravaStatus } from '@/lib/strava';
 import { ListLink, PageHeader } from '@/components/ui';
@@ -25,7 +25,7 @@ export function SyncChip() {
 
 export function SettingsPage() {
   const { t, fmt } = useI18n();
-  const { strava, notify } = useSettingsOrDefault();
+  const { strava, notify, calendar } = useSettingsOrDefault();
   // Strava shows once it's set up on the server (or already connected).
   const [stravaReady, setStravaReady] = useState(false);
   useEffect(() => {
@@ -43,6 +43,12 @@ export function SettingsPage() {
           <ListLink to="/settings/duty-types" icon={<CalendarClock size={20} />} title={t('settings.dutyTypes')} sub={t('settings.dutyTypes.sub')} />
           <ListLink to="/settings/rules" icon={<ListChecks size={20} />} title={t('settings.rules')} sub={t('settings.rules.sub')} />
           <ListLink to="/settings/zones" icon={<Heart size={20} />} title={t('settings.zones')} sub={t('settings.zones.sub')} />
+          <ListLink
+            to="/settings/calendar"
+            icon={<CalendarCheck size={20} />}
+            title={t('cal.title')}
+            sub={calendar ? t('cal.onSub') : t('cal.offSub')}
+          />
           <ListLink
             to="/settings/notifications"
             icon={<Bell size={20} />}
