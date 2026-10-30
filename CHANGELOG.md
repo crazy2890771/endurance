@@ -2,6 +2,9 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.16.0 — 2026-10-30
+- Cycling has a **Recovery** type (Zone 1, 40 min by default), like running.
+
 ## 1.15.0 — 2026-10-29
 **Leaner**
 - Home: the four per-activity count tiles are gone (they were mostly zeros); the backup and Add-to-Home-Screen cards moved to the bottom. The top-right icon is now a checklist (Plan Check) instead of a bell, which now means notifications.

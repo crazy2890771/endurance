@@ -14,7 +14,7 @@ export const TRAINING_ACTIVITIES: Exclude<Activity, 'rest'>[] = ['run', 'cycle',
 
 export const TYPES_BY_ACTIVITY: Record<Activity, WorkoutType[]> = {
   run: ['easy', 'recovery', 'tempo', 'interval', 'long'],
-  cycle: ['easy', 'endurance', 'tempo', 'interval'],
+  cycle: ['easy', 'recovery', 'endurance', 'tempo', 'interval'],
   swim: ['easy', 'technique', 'endurance', 'interval'],
   strength: ['upper', 'lower', 'full', 'mobility'],
   rest: ['rest'],
@@ -24,7 +24,7 @@ export const TYPES_BY_ACTIVITY: Record<Activity, WorkoutType[]> = {
 export function defaultDuration(activity: Activity, type: WorkoutType): number {
   const table: Partial<Record<Activity, Partial<Record<WorkoutType, number>>>> = {
     run: { easy: 45, recovery: 30, tempo: 50, interval: 60, long: 90 },
-    cycle: { easy: 60, endurance: 90, tempo: 60, interval: 60 },
+    cycle: { easy: 60, recovery: 40, endurance: 90, tempo: 60, interval: 60 },
     swim: { easy: 40, technique: 40, endurance: 50, interval: 45 },
     strength: { upper: 40, lower: 45, full: 50, mobility: 25 },
   };

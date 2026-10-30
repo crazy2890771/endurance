@@ -369,3 +369,13 @@ describe('no running after a long run', () => {
     expect(run([long, w('2026-10-22', { status: 'skipped' })], only('runAfterLong'))).toHaveLength(0);
   });
 });
+
+describe('workout types', () => {
+  it('offers recovery rides at Zone 1, 40 min by default, and they are not hard', async () => {
+    const { TYPES_BY_ACTIVITY, DEFAULT_ZONE_BY_TYPE, defaultDuration, isHardSession } = await import('@/domain/catalog');
+    expect(TYPES_BY_ACTIVITY.cycle).toContain('recovery');
+    expect(DEFAULT_ZONE_BY_TYPE.recovery).toBe(1);
+    expect(defaultDuration('cycle', 'recovery')).toBe(40);
+    expect(isHardSession({ activity: 'cycle', type: 'recovery', hrZone: 1, durationMin: 40 })).toBe(false);
+  });
+});
