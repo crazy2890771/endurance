@@ -2,12 +2,14 @@ import { useRef, useState } from 'react';
 import { AlertTriangle, FileUp } from 'lucide-react';
 import { PageHeader, Spinner } from '@/components/ui';
 import { readActivityFiles } from '@/lib/fit';
+import { useSettingsOrDefault } from '@/db/hooks';
 import { useI18n } from '@/i18n';
 import { ActivityReview, reviewRows, type ReviewRow } from './ActivityReview';
 
 /** Import results from Garmin .FIT files (or Garmin Connect's "Export Original" .zip), read on the phone. */
 export function FitImportPage() {
   const { t } = useI18n();
+  const settings = useSettingsOrDefault();
   const input = useRef<HTMLInputElement>(null);
   const [rows, setRows] = useState<ReviewRow[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -20,7 +22,7 @@ export function FitImportPage() {
     setError(undefined);
     setRows(null);
     try {
-      const acts = await readActivityFiles(files);
+      const acts = await readActivityFiles(files, settings.units);
       if (!acts.length) throw new Error(t('fit.noActivity'));
       const r = await reviewRows(acts);
       setSkipped(acts.length - r.length);
@@ -40,7 +42,7 @@ export function FitImportPage() {
           ref={input}
           type="file"
           multiple
-          accept=".fit,.zip,application/zip,application/octet-stream"
+          accept=".fit,.zip,.csv,text/csv,application/zip,application/octet-stream"
           className="hidden"
           aria-hidden="true"
           tabIndex={-1}
@@ -69,6 +71,11 @@ export function FitImportPage() {
             <li>{t('fit.how1')}</li>
             <li>{t('fit.how2')}</li>
             <li>{t('fit.how3')}</li>
+          </ol>
+          <p className="font-semibold mt-3">{t('fit.csvTitle')}</p>
+          <ol className="list-decimal pl-5 mt-1 flex flex-col gap-1 text-muted">
+            <li>{t('fit.csv1')}</li>
+            <li>{t('fit.csv2')}</li>
           </ol>
         </details>
 

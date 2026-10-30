@@ -96,7 +96,7 @@ If a workout or its duty has no times, a *Limited* duty raises an information no
 
 ## Garmin files
 
-**History → Import from Garmin** reads `.fit` files or Garmin Connect's "Export Original" `.zip` on the phone (`src/lib/fit.ts`) and uses the same matching and review as Strava.
+**History → Import from Garmin** reads Garmin Connect's Activities **Export CSV** (`src/lib/garminCsv.ts`), `.fit` files, or "Export Original" `.zip` on the phone (`src/lib/fit.ts`) and uses the same matching and review as Strava.
 
 ## Strava
 

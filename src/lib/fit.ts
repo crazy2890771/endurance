@@ -4,6 +4,7 @@
  * Runs in the browser; nothing is uploaded.
  */
 import type { StravaActivity } from '@/lib/strava';
+import { garminCsvActivities } from '@/lib/garminCsv';
 
 /** Seconds between the Unix epoch and the FIT epoch (1989-12-31T00:00:00Z). */
 const FIT_EPOCH = 631065600;
@@ -206,12 +207,16 @@ export async function unzipFits(buf: ArrayBuffer): Promise<{ name: string; data:
   return out;
 }
 
-/** Reads picked files (.fit or Garmin's .zip) into activities. */
-export async function readActivityFiles(files: File[]): Promise<StravaActivity[]> {
+/** Reads picked files (.fit, Garmin's .zip, or the Activities “Export CSV”) into activities. */
+export async function readActivityFiles(files: File[], units: 'metric' | 'imperial' = 'metric'): Promise<StravaActivity[]> {
   const offset = -new Date().getTimezoneOffset();
   const all: StravaActivity[] = [];
   for (const f of files) {
     const buf = await f.arrayBuffer();
+    if (/\.csv$/i.test(f.name) || /^(\uFEFF)?"?Activity Type/i.test(new TextDecoder().decode(buf.slice(0, 64)))) {
+      all.push(...garminCsvActivities(new TextDecoder().decode(buf), units));
+      continue;
+    }
     const isZip = new DataView(buf).getUint32(0, true) === 0x04034b50;
     const fits = isZip ? await unzipFits(buf) : [{ name: f.name, data: buf }];
     for (const fit of fits) all.push(...fitActivities(fit.data, fit.name.replace(/\.fit$/i, '').replace(/^.*\//, ''), offset));

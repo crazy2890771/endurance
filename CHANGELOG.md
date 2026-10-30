@@ -2,6 +2,10 @@
 
 Each build shows its version and commit on the splash screen, under **Settings → About**, and at `/version.json`.
 
+## 1.18.0 — 2026-10-30
+- **Import from Garmin** now reads the Activities list's **Export CSV**: one file brings in every activity (date, time, distance, average/max heart rate), with the same review and matching as before. `.fit` and `.zip` still work, and an activity is never imported twice across the three.
+- Matching now weighs how close an activity's length is to the planned workout, not only its start time, so a 2-minute warm-up no longer takes the planned interval. Activities under 5 minutes start unticked.
+
 ## 1.17.0 — 2026-10-30
 - **iPhone Calendar** (Settings → iPhone Calendar): one tap adds a private calendar with your duties and workouts to the iPhone Calendar, so calendar widgets and Lock Screen calendar apps show them. Flights and timed duties keep their times (overnight ones end the next morning), days off are all-day, workouts show at their start time (✓ when done). It updates by itself when the roster or plan changes.
 - Privacy: this is the one feature that keeps data on the server: times, duty types, routes and workouts (no crew names), behind a secret link. “New link” replaces a leaked link; “Disconnect” deletes the data.

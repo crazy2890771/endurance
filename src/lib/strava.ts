@@ -66,11 +66,12 @@ export function matchActivities(activities: StravaActivity[], workouts: Workout[
   const minutes = (hhmm?: string) => (hhmm ? Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5)) : 12 * 60);
   const sorted = [...activities].sort((a, b) => a.startLocal.localeCompare(b.startLocal));
   const open = sorted.filter((a) => stravaActivity(a) && !importedIds.has(a.id));
-  // Every same-day, same-activity pair, closest in time first; take a pair while both sides are free.
+  // Every same-day, same-activity pair, best fit first; take a pair while both sides are free.
   const pairs = open.flatMap((a) =>
     free
       .filter((w) => w.date === a.startLocal.slice(0, 10) && w.activity === stravaActivity(a))
-      .map((w) => ({ a, w, gap: Math.abs(minutes(w.startTime) - minutes(a.startLocal.slice(11, 16))) })),
+      // Closest start time, and closest length to the plan (so a 2-minute warm-up doesn't take the interval).
+      .map((w) => ({ a, w, gap: Math.abs(minutes(w.startTime) - minutes(a.startLocal.slice(11, 16))) + Math.abs(a.movingSec / 60 - w.durationMin) })),
   );
   const byActivity = new Map<number, Workout>();
   const used = new Set<string>();

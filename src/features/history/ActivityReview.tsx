@@ -21,7 +21,8 @@ export async function reviewRows(activities: StravaActivity[]): Promise<ReviewRo
   const imported = await db.workouts.filter((w) => !w.deleted && !!w.result?.stravaId).toArray();
   return matchActivities(activities, [...workouts, ...imported.filter((w) => !workouts.some((x) => x.id === w.id))])
     .filter((m) => m.kind && !m.imported)
-    .map((m) => ({ ...m, include: true }));
+    // Very short entries (warm-ups, a stopped watch) start unticked.
+    .map((m) => ({ ...m, include: m.activity.movingSec >= 300 }));
 }
 
 /** Review list with a sticky save bar: matched activities complete their planned workout, the rest are added. */
